@@ -1,0 +1,6 @@
+^data$
+^outputs$
+^figures$
+^analyses$
+^.*\.Rproj$
+^\.Rproj\.user$
