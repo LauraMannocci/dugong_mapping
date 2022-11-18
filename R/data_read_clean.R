@@ -41,6 +41,8 @@ read_telem <- function(){
   
 }
 
+
+
 #' Clean telemetry data
 #'
 #' @param telem
@@ -104,6 +106,22 @@ clean_video_info <- function(vid){
 }
 
 
+
+#' Join video information to telemetry
+#'
+#' @return
+#' @export
+#'
+
+join_video_info_telem <- function(vid, telem){
+  
+  joined = dplyr::left_join(telem, vid, by = "video_id")
+  
+  return(joined)
+  
+}
+
+
 #' Join west coast video information to telemetry
 #'
 #' @return
@@ -140,7 +158,8 @@ clean_duplicated_obs_telemetry <- function(telem, overl, im_height){
     #calculate y coordinate of object center
     dplyr::mutate(center_y = as.numeric(start_y) + (as.numeric(end_y) - as.numeric(start_y))/2) %>%
     #drops lines with no object
-    tidyr::drop_na(object) %>%
+    dplyr::filter(object != "\r") %>% 
+    # tidyr::drop_na(object) %>%
     #drops coral and plane shadow
     dplyr::filter(!object %in% c("Coral", "Plane_shadow"))  -> telem2
   
@@ -333,7 +352,10 @@ select_wcoast_videos <- function(vid, list){
 
 
 
-#' select observations for west coast
+
+
+
+#' select telemetry for west coast
 #'
 #' @param telem_obs
 #' @param ls_vids
@@ -342,12 +364,12 @@ select_wcoast_videos <- function(vid, list){
 #' @export
 #'
 
-select_obs_telemetry_wcoast <- function(telem_obs, ls_vids){
+select_telemetry_wcoast <- function(telem, ls_vids){
   
-  telem_obs %>%
-    dplyr::filter(video_id %in% ls_vids) -> telem_obs_new
+  telem %>%
+    dplyr::filter(video_id %in% ls_vids) -> telem_new
   
-  return(telem_obs_new)
+  return(telem_new)
   
 }
 
@@ -366,7 +388,7 @@ select_obs_telemetry_wcoast <- function(telem_obs, ls_vids){
 #' @export
 #'
 
-read_crop_and_convert_allen_coralnc_benthic <- function(lon1, lon2, lat2, lat1){
+read_convert_allen_coral_benthic <- function(lon1, lon2, lat2, lat1){
   
   # read shapefile
   data_allen = sf::st_read(dsn = "data/raw_data/allen/benthic_sm.gpkg", stringsAsFactors = FALSE)
@@ -383,7 +405,7 @@ read_crop_and_convert_allen_coralnc_benthic <- function(lon1, lon2, lat2, lat1){
 
 
 
-#' Make raster for study area with given resolution
+#' Make raster for study area in lat lon with given resolution
 #'
 #' @param lat1
 #' @param lon1
@@ -395,7 +417,7 @@ read_crop_and_convert_allen_coralnc_benthic <- function(lon1, lon2, lat2, lat1){
 #' @export
 #'
 
-make_area_raster <- function(lat1, lon1, lat2, lon2, res){
+make_area_raster_latlon <- function(lat1, lon1, lat2, lon2, res){
   
   # create raster for study area
   r = raster::raster(ext = raster::extent(lon1, lon2, lat2, lat1), resolution = res) #resolution in degrees
@@ -407,6 +429,43 @@ make_area_raster <- function(lat1, lon1, lat2, lon2, res){
   return(r)
   
 }
+
+
+
+
+
+
+#' Make study area raster projected to lambert New caledonia in meters with given resolution in meters
+#'
+#' @param lat1
+#' @param lon1
+#' @param lat2
+#' @param lon2
+#' @param res_meters
+#'
+#' @return
+#' @export
+#'
+
+make_area_raster_xy <- function(lat1, lon1, lat2, lon2, res_meters){
+  
+  # create raster for study area in lat / lon
+  r = raster::raster(ext = raster::extent(lon1, lon2, lat2, lat1), resolution = 0.01) #resolution in degrees
+  
+  # project raster to Lambert Caledonia to get extent in meters
+  rproj = raster::projectRaster(r, crs="+init=epsg:3163") #NC projection
+  
+  # recreate corresponding raster with extent in meters and given resolution in meters
+  r = raster::raster(ext = raster::extent(rproj), resolution = res_meters, crs="+init=epsg:3163") #resolution in meters
+  raster::values(r) = 1:raster::ncell(r)
+
+  return(r)
+  
+}
+
+
+
+
 
 
 

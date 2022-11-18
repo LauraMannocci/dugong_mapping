@@ -5,12 +5,20 @@ devtools::load_all()
 
 
 
-######################################## DEFINE STUDY AREA ########################################
+######################################## DEFINE STUDY AREA AND CORRESPONDING RASTERS ########################################
 
 #Define study area coordinates
 #big region
 lat1 =  -21.2 ; lat2 = -22
 lon1 = 164.6 ; lon2 = 166
+
+# make study area raster in lat lon  (resolution 0.01 degrees) 
+rast_latlon = make_area_raster_latlon(lat1, lon1, lat2, lon2, 0.01)
+
+# make study area raster projected to lambert New caledonia in meters with given resolution in meters (resolution 500 meters) 
+rast_xy = make_area_raster_xy(lat1, lon1, lat2, lon2, 500)
+
+
 
 
 ######################################## CALCULATE FLIGHT PARAMETERS ########################################
@@ -39,16 +47,14 @@ telemetry = read_telem()
 #clean telemetry data
 telemetry = clean_telem(telemetry, lat1, lon1, lat2, lon2)
 
-#Clean duplicated obs from telemetry
-#telemetry_obs = clean_duplicated_obs_telemetry(telemetry, overlap, image_height) (this code takes about 20 minutes to process)
-#alternatively read the Rdata to read the processed data directly (telemetry_obs)
-load("data/processed_data/telemetry_obs.RData") 
-
 #Read video information
 videos = read_video_info()
 
 #Clean video information
 videos = clean_video_info(videos)
+
+#Join video information to telemetry
+telemetry = join_video_info_telem(videos, telemetry)
 
 #Get list of west coast videos
 ls_videos = list_wcoast_videos(videos)
@@ -56,11 +62,13 @@ ls_videos = list_wcoast_videos(videos)
 #select video information for west coast
 videos = select_wcoast_videos(videos, ls_videos)
 
-#Join video information to telemetry
-telemetry = join_wcoast_video_info_telem(videos, telemetry)
+#select west coast telemetry
+telemetry = select_telemetry_wcoast(telemetry, ls_videos)
 
-#select west coast observations
-telemetry_obs = select_obs_telemetry_wcoast(telemetry_obs, ls_videos)
+#Clean duplicated obs from telemetry
+#telemetry_obs = clean_duplicated_obs_telemetry(telemetry, overlap, image_height) #(this code takes about 20 minutes to process)
+#alternatively read the Rdata to read the processed data directly (telemetry_obs)
+load("data/processed_data/telemetry_obs.RData") 
 
 #count total number of individuals observed per species
 telemetry_obs %>%
@@ -76,12 +84,11 @@ telemetry_obs %>%
 ######################################## READ CORAL DATA ########################################
 
 #read Allen coral benthic polygon
-allen_coral = read_crop_and_convert_allen_coralnc_benthic(lon1, lon2, lat2, lat1)
+coral = read_convert_allen_coral_benthic(lon1, lon2, lat2, lat1)
 
-# make study area raster (resolution 0.005 degrees)
-rast = make_area_raster(lat1, lon1, lat2, lon2, 0.05)
+# make coral raster h ?????
+t = raster::rasterize(coral, rast_latlon)
 
-# make coral raster PROBLEM
 
 
 
@@ -120,7 +127,7 @@ lines = merge_transect_lines(lines1, lines2, lines3)
 maplatlon = osm_map(lat1, lon1, lat2, lon2)
 
 
-###### Map Allen coral polygons benthic PROBLEM
+###### Map Allen coral polygons benthic PROBLEM ?????
 map_allen_coral_osm(maplatlon, mpa, allen_coral, lon1, lon2, lat1, lat2, dist = 2, offset_lon = 0.07, offset_lat = 0.01)
 
 
@@ -154,12 +161,117 @@ map_telemetry_transects(maplatlon, telemetry, lines)
 
 ###################################### SELECT ON EFFORT TELEMETRY DATA #####################################
 
+#TO DO LAURA
+telemetry_on = telemetry
 
-
-
+telemetry_obs_on = telemetry_obs
 
 
 
 
 
 ############################################ MAKE DENSITY MAPS ON REGULAR GRID ON EFFORT #############################################################
+
+
+
+#project osm for density mapping
+maplatlon_proj = osm_mapproj(maplatlon)
+
+#Make grid from xy study area raster 
+grid = make_grid(rast_xy)
+
+#get survey dates
+telemetry %>%  
+  dplyr::count(date) %>% 
+  dplyr::pull(date) %>% 
+  as.character() -> dates
+
+#restrict telemetry to dates of surveys 
+telemetry_on = restrict_telem_dates(telemetry_on, dates)
+
+#convert telemetry points to lines
+list_lines = convert_telemetry_points_to_lines(telemetry_on)
+#lapply does not work in function convert_telemetry_points_to_lines() SO NEED TO RUN OUTSIDE FUNCTION 
+
+
+
+### Track length
+
+#Sum length of tracks (m) in grid cells per date
+grid_tracks_per_date = sum_length_per_grid_per_date(grid, list_lines, dates)
+
+#Total surveyed length
+sum(grid_tracks_per_date$length, na.rm=T) #1285219 m
+
+#Mean surveyed length per survey date
+sum(grid_tracks_per_date$length, na.rm=T) / length(dates) #183602.7 m
+
+#Total surveyed area
+footprint_width * sum(grid_tracks_per_date$length, na.rm=T) # 114045335 m2 =  114.04 km2
+
+#Mean surveyed area per survey date
+footprint_width * sum(grid_tracks_per_date$length, na.rm=T) / length(dates) #16292191 m2 = 16.2 km2
+
+#Map length of tracks per grid cell per date
+map_tracklen_per_grid_per_date(maplatlon_proj, grid_tracks_per_date, 0.5)
+
+#Map length of tracks per grid cell (all dates)
+map_tracklen_per_grid(maplatlon_proj, grid_tracks_per_date, 0.5)
+
+
+
+### Observations
+
+#Count total number of observations per grid cell per date
+grid_obs_per_date = count_obs_per_grid_per_date(grid, telemetry_obs_on)
+
+#Map number of species observations per grid cell per date
+map_obs_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, "Dugong_certain", 0.05)
+map_obs_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, "Turtle", 0.05)
+map_obs_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, "Shark", 0.05)
+map_obs_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, "Round_ray", 0.05)
+map_obs_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, "Eagle_ray", 0.05)
+
+#Map number of species observations per grid cell (all dates)
+map_obs_per_grid_species(maplatlon_proj, grid_obs_per_date, "Dugong_certain", 0.2)
+map_obs_per_grid_species(maplatlon_proj, grid_obs_per_date, "Turtle", 0.2)
+map_obs_per_grid_species(maplatlon_proj, grid_obs_per_date, "Shark", 0.2)
+map_obs_per_grid_species(maplatlon_proj, grid_obs_per_date, "Round_ray", 0.2)
+map_obs_per_grid_species(maplatlon_proj, grid_obs_per_date, "Eagle_ray", 0.2)
+
+
+
+### Densities
+
+#Map species densities per grid cell (per date)
+map_dens_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Dugong_certain", 0.05)
+map_dens_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Turtle", 0.05)
+map_dens_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Shark", 0.05)
+map_dens_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Round_ray", 0.05)
+map_dens_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Eagle_ray", 0.05)
+
+#Map species densities per grid cell (all dates) LOG with zero
+map_dens_per_grid_species_log_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Dugong_certain", 0.2)
+map_dens_per_grid_species_log_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Turtle", 0.2)
+map_dens_per_grid_species_log_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Shark", 0.2)
+map_dens_per_grid_species_log_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Round_ray", 0.2)
+map_dens_per_grid_species_log_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Eagle_ray", 0.2)
+
+
+
+
+
+############################################ CREATE DENSITY RASTERS #############################################################
+
+
+#Make dataframe per grid cell centers (including empty cell centers) of observations, track length and densities per date and per species 
+df_all_species = make_df_all_species(grid_obs_per_date, grid_tracks_per_date, footprint_width) #desnity in ind / ha
+
+#get raster stack of desnity for given species
+r_density_Dugong_certain = get_density_stack_species(df_all_species, "Dugong_certain")
+save(r_density_Dugong_certain, file = "data/processed_data/raster_Dugong_certain.RData")
+
+
+#tO do 
+#merge dugong probable and certain
+#correct availability bias in density
