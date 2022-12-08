@@ -25,7 +25,7 @@ osm_map <- function(lat1, lon1, lat2, lon2){
 
 
 
-#' Make map of Allen coral geomorphology polygons overlaid on osm
+#' Make map of Allen coral habitat polygons overlaid on osm
 #'
 #' @param cor
 #' @param maplatlon
@@ -33,38 +33,26 @@ osm_map <- function(lat1, lon1, lat2, lon2){
 #' @param lon2
 #' @param lat1
 #' @param lat2
-#' @param offset_lon
-#' @param offset_lat
-#' @param pa
-#' @param dist
 #'
 #' @return
 #' @export
 #'
 
-map_allen_coral_osm <- function(maplatlon, pa, cor, lon1, lon2, lat1, lat2, dist, offset_lon, offset_lat){
+map_allen_coral_osm <- function(maplatlon, cor, lon1, lon2, lat1, lat2){
   
   # check if there are invalid polygon geometries & correct that
   rgeos::gIsValid(cor) #returns FALSE
   cor2 = rgeos::gBuffer(cor, byid = TRUE, width = 0) #corrects invalid geometries
   rgeos::gIsValid(cor2) #returns TRUE
   
-  #crop polygons to osm extent
-  cor3 = raster::crop(cor2, raster::extent(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1],
-                                           maplatlon$bbox$p2[2], maplatlon$bbox$p1[2]))
-  
   # fortify
-  cor4 = cor3 %>%
+  cor3 = cor2 %>%
     ggplot2::fortify(region = "class")
-  
-  #add mpa
-  pa2 = pa %>%
-    ggplot2::fortify(region = "NAME")
   
   map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon)
   
   map = map +
-    ggplot2::geom_polygon(data = cor4, ggplot2::aes(x = long, y = lat, group = group, fill = id), alpha = 0.8) +
+    ggplot2::geom_polygon(data = cor3, ggplot2::aes(x = long, y = lat, group = group, fill = id), alpha = 0.8) +
     #legend
     ggplot2::theme(legend.text = ggplot2::element_text(size = 13),
                    legend.key.size = ggplot2::unit(1.15,"line"),
@@ -75,12 +63,57 @@ map_allen_coral_osm <- function(maplatlon, pa, cor, lon1, lon2, lat1, lat2, dist
                    axis.ticks = ggplot2::element_blank()) +
     ggplot2::labs(fill = "") +
     #colors
-    ggplot2::scale_fill_manual(values = rev(colorspace::qualitative_hcl(length(unique(cor4$id)), c = 70, l = 50))) +
-    ggplot2::labs(x = "Longitude", y = "Latitude") +
-    #add mpa
-    ggplot2::geom_polygon(data = pa2, ggplot2::aes(x = long, y = lat), col = "yellow", alpha = 0.1)
+    ggplot2::scale_fill_manual(values = rev(colorspace::qualitative_hcl(length(unique(cor3$id)), c = 70, l = 50))) +
+    ggplot2::labs(x = "Longitude", y = "Latitude")
   
-  ggplot2::ggsave(here::here("outputs/map_allen_coral_osm.png"), map, width = 7, height = 5)
+  ggplot2::ggsave(here::here("outputs/predictors/map_allen_coral_osm.png"), map, width = 7, height = 5)
+  
+}
+
+
+
+#' Make map of Allen coral geomorphology polygons overlaid on osm
+#'
+#' @param cor
+#' @param maplatlon
+#' @param lon1
+#' @param lon2
+#' @param lat1
+#' @param lat2
+#'
+#' @return
+#' @export
+#'
+
+map_allen_geomorpho_osm <- function(maplatlon, cor, lon1, lon2, lat1, lat2){
+  
+  # check if there are invalid polygon geometries & correct that
+  rgeos::gIsValid(cor) #returns FALSE
+  cor2 = rgeos::gBuffer(cor, byid = TRUE, width = 0) #corrects invalid geometries
+  rgeos::gIsValid(cor2) #returns TRUE
+  
+  # fortify
+  cor3 = cor2 %>%
+    ggplot2::fortify(region = "class")
+  
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon)
+  
+  map = map +
+    ggplot2::geom_polygon(data = cor3, ggplot2::aes(x = long, y = lat, group = group, fill = id), alpha = 0.8) +
+    #legend
+    ggplot2::theme(legend.text = ggplot2::element_text(size = 9),
+                   legend.key.size = ggplot2::unit(1.15,"line"),
+                   legend.position = "bottom",
+                   axis.title.x =  ggplot2::element_blank(),
+                   axis.title.y =  ggplot2::element_blank(),
+                   axis.text = ggplot2::element_blank(),
+                   axis.ticks = ggplot2::element_blank()) +
+    ggplot2::labs(fill = "") +
+    #colors
+    ggplot2::scale_fill_manual(values = rev(colorspace::qualitative_hcl(length(unique(cor3$id)), c = 70, l = 50))) +
+    ggplot2::labs(x = "Longitude", y = "Latitude")
+  
+  ggplot2::ggsave(here::here("outputs/predictors/map_allen_geomorpho_osm.png"), map, width = 7, height = 5)
   
 }
 
@@ -222,11 +255,9 @@ map_indiv_species_telemetry_separate <- function(maplatlon, telem, telem_obs){
   species_labels <- c(
     "Turtle" = paste0("Turtle ind=", nrow(telem_obs[telem_obs$object=="Turtle",]),
                       " imag=", length((telem_species_per_image$image_id[telem_species_per_image$object=="Turtle"]))),
-    "Dugong_certain" = paste0("Dugong_certain ind=", nrow(telem_obs[telem_obs$object=="Dugong_certain",]),
-                              " imag=", length((telem_species_per_image$image_id[telem_species_per_image$object=="Dugong_certain"]))),
-    "Dugong_probable" = paste0("Dugong_probable ind=", nrow(telem_obs[telem_obs$object=="Dugong_probable",]),
-                               " imag=", length((telem_species_per_image$image_id[telem_species_per_image$object=="Dugong_probable"]))),
-    "Shark" = paste0("Shark ind=", nrow(telem_obs[telem_obs$object=="Shark",]),
+    "Dugong_certain_probable" = paste0("Dugong ind=", nrow(telem_obs[telem_obs$object=="Dugong_certain_probable",]),
+                              " imag=", length((telem_species_per_image$image_id[telem_species_per_image$object=="Dugong_certain_probable"]))),
+     "Shark" = paste0("Shark ind=", nrow(telem_obs[telem_obs$object=="Shark",]),
                      " imag=", length((telem_species_per_image$image_id[telem_species_per_image$object=="Shark"]))),
     "Round_ray" = paste0("Round_ray ind=", nrow(telem_obs[telem_obs$object=="Round_ray",]),
                          " imag=", length((telem_species_per_image$image_id[telem_species_per_image$object=="Round_ray"]))),

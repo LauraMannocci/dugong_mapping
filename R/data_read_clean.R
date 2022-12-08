@@ -63,6 +63,9 @@ clean_telem <- function(telem, lat1, lon1, lat2, lon2){
   #select columns
   #dplyr::select(image_id, video_id, lat, lon, alt, object) -> telem_new
   
+  #convert object to factor
+  telem_new$object = as.factor(telem_new$object) 
+  
   return(telem_new)
   
 }
@@ -377,31 +380,10 @@ select_telemetry_wcoast <- function(telem, ls_vids){
 
 
 
-#' Read and convert New Caledonia Allen coral shapefile benthic
-#'
-#' @param lon1
-#' @param lon2
-#' @param lat2
-#' @param lat1
-#'
-#' @return
-#' @export
-#'
 
-read_convert_allen_coral_benthic <- function(lon1, lon2, lat2, lat1){
-  
-  # read shapefile
-  data_allen = sf::st_read(dsn = "data/raw_data/allen/benthic_sm.gpkg", stringsAsFactors = FALSE)
-  
-  #crop
-  data_allen_crop = sf::st_crop(data_allen, xmin = lon1, ymin = lat2, xmax = lon2, ymax = lat1)
-  
-  #convert sf to spatialPolygonsDataFrame
-  sf_allen_coral_poly = sf:::as_Spatial(data_allen_crop)
-  
-  return(sf_allen_coral_poly)
-  
-}
+
+
+
 
 
 

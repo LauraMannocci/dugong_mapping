@@ -4,21 +4,10 @@
 \alias{map_allen_coral_osm}
 \title{Make map of Allen coral geomorphology polygons overlaid on osm}
 \usage{
-map_allen_coral_osm(
-  maplatlon,
-  pa,
-  cor,
-  lon1,
-  lon2,
-  lat1,
-  lat2,
-  dist,
-  offset_lon,
-  offset_lat
-)
+map_allen_coral_osm(maplatlon, cor, lon1, lon2, lat1, lat2)
 }
 \arguments{
-\item{dist}{}
+\item{lat2}{}
 }
 \description{
 Make map of Allen coral geomorphology polygons overlaid on osm

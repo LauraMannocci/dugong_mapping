@@ -266,7 +266,7 @@ count_obs_per_grid_per_date <- function(polygon, telem_obs){
   
   # keep megafauna observations
   telem_obs %>%
-    dplyr::filter(object %in% c("Turtle", "Dugong_certain", "Dugong_probable", "Round_ray", "Eagle_ray", "Manta_ray", "Dolphin", "Shark")) -> telem_obs2
+    dplyr::filter(object %in% c("Turtle", "Dugong_certain_probable", "Round_ray", "Eagle_ray", "Manta_ray", "Dolphin", "Shark")) -> telem_obs2
   
   # convert to sf object
   points = sf::st_as_sf(x = telem_obs2,
@@ -322,9 +322,10 @@ map_obs_per_grid_per_date_species <- function(maplatlonproj, polygon, species, s
   
   dates = unique(counts$date)
   
+  #map1
   map = OpenStreetMap::autoplot.OpenStreetMap(maplatlonproj) + ##convert OSM to ggplot2 format
-      ggplot2::geom_point(data = counts, ggplot2::aes(x = lon, y = lat, color = count), shape = 15, size=size, alpha = 0.85) +
-      ggplot2::facet_wrap(~date, nrow = 2, ncol = 4) +
+      ggplot2::geom_point(data = subset(counts, counts$date %in% dates[1:3]), ggplot2::aes(x = lon, y = lat, color = count), shape = 15, size=size, alpha = 0.85) +
+      ggplot2::facet_wrap(~date, nrow = 2, ncol = 2) +
       ggplot2::ggtitle(species) +
       ggplot2::theme(axis.title = ggplot2::element_blank(),
                        axis.text = ggplot2::element_blank(),
@@ -333,8 +334,21 @@ map_obs_per_grid_per_date_species <- function(maplatlonproj, polygon, species, s
       ggplot2::scale_color_gradient(low = "dark grey", high = "red", na.value = NA,
                                       name = "individuals")
       
-      ggplot2::ggsave(here::here(paste0("outputs/map_obs_per_grid_per_date_", species, ".png")), map, width = 7, height = 5)
+  ggplot2::ggsave(here::here(paste0("outputs/map_obs_per_grid_per_date_", species, "1.png")), map, width = 8, height = 6)
   
+  #map2
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlonproj) + ##convert OSM to ggplot2 format
+    ggplot2::geom_point(data = subset(counts, counts$date %in% dates[4:7]), ggplot2::aes(x = lon, y = lat, color = count), shape = 15, size=size, alpha = 0.85) +
+    ggplot2::facet_wrap(~date, nrow = 2, ncol = 2) +
+    ggplot2::ggtitle(species) +
+    ggplot2::theme(axis.title = ggplot2::element_blank(),
+                   axis.text = ggplot2::element_blank(),
+                   axis.ticks = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5)) +
+    ggplot2::scale_color_gradient(low = "dark grey", high = "red", na.value = NA,
+                                  name = "individuals")
+  
+  ggplot2::ggsave(here::here(paste0("outputs/map_obs_per_grid_per_date_", species, "2.png")), map, width = 8, height = 6)
   
 }
 
@@ -441,29 +455,46 @@ map_dens_per_grid_per_date_species <- function(maplatlonproj, polyobs, polytrack
   result = counts %>%
     dplyr::right_join(effort2, by = c("id", "date")) %>%
     dplyr::mutate(density = count / (length*footprintwidth))  %>% #density in indiv/m2
-    dplyr::mutate(density = density * 10000)  %>%  #density in indiv/ha (1 ha = 10000m2 - 1m2 = 10-4 ha)
+    dplyr::mutate(density = density * 250000)  %>%  #density in indiv/250000m2 (1 ha = 10000m2 - 1m2 = 10-4 ha)
     dplyr::rename(lon = lon.x, lat = lat.x) %>%
     dplyr::select(-lat.y, -lon.y)
   
+  dates = unique(result$date)
+  
+  #map1
   map = OpenStreetMap::autoplot.OpenStreetMap(maplatlonproj) + ##convert OSM to ggplot2 format
-      ggplot2::geom_point(data = result, ggplot2::aes(x = lon, y = lat, color = density), shape = 15, size = size, alpha = 0.85) +
-      ggplot2::facet_wrap(~date, nrow = 2, ncol = 4) +
+      ggplot2::geom_point(data = subset(result, result$date %in% dates[1:3]), ggplot2::aes(x = lon, y = lat, color = density), shape = 15, size = size, alpha = 0.85) +
+      ggplot2::facet_wrap(~date, nrow = 2, ncol = 2) +
       ggplot2::ggtitle(species) +
       ggplot2::theme(axis.title = ggplot2::element_blank(),
                      axis.text = ggplot2::element_blank(),
                      axis.ticks = ggplot2::element_blank(),
                      plot.title = ggplot2::element_text(hjust = 0.5)) +
       ggplot2::scale_color_gradient(low = "dark grey", high = "red", na.value = NA,
-                                    name = "indiv/ha")
+                                    name = "indiv/0.25km2") #ie 250000m2
     
-    ggplot2::ggsave(here::here(paste0("outputs/map_dens_per_grid_per_date_", species, ".png")), map, width = 7, height = 5)
+  ggplot2::ggsave(here::here(paste0("outputs/map_dens_per_grid_per_date_", species, "1.png")), map, width = 7, height = 5)
+  
+  #map2
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlonproj) + ##convert OSM to ggplot2 format
+    ggplot2::geom_point(data = subset(result, result$date %in% dates[4:7]), ggplot2::aes(x = lon, y = lat, color = density), shape = 15, size = size, alpha = 0.85) +
+    ggplot2::facet_wrap(~date, nrow = 2, ncol = 2) +
+    ggplot2::ggtitle(species) +
+    ggplot2::theme(axis.title = ggplot2::element_blank(),
+                   axis.text = ggplot2::element_blank(),
+                   axis.ticks = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5)) +
+    ggplot2::scale_color_gradient(low = "dark grey", high = "red", na.value = NA,
+                                  name = "indiv/0.25km2") #ie 250000m2
+  
+  ggplot2::ggsave(here::here(paste0("outputs/map_dens_per_grid_per_date_", species, "2.png")), map, width = 7, height = 5)
     
   
 }
 
 
 
-#' Map density per grid cell for given species (nb of observations / (length of tracks in meters * footprint_width in meters))
+#' Map density per grid cell for given species in LOG scale with zeros (nb of observations / (length of tracks in meters * footprint_width in meters))
 #'
 #' @param polyobs
 #' @param polytracks
@@ -517,7 +548,7 @@ map_dens_per_grid_species_log_with_zero <- function(maplatlonproj, polyobs, poly
   result = counts2 %>%
     dplyr::left_join(effort2, by = "id") %>%
     dplyr::mutate(density = tot_count / (tot_length*footprintwidth))  %>% #density in indiv/m2
-    dplyr::mutate(density = density * 10000)  %>%  #density in indiv/ha (1 ha = 10000m2 - 1m2 = 10-4 ha)
+    dplyr::mutate(density = density * 250000)  %>%  #density in indiv/250000m2 (1 ha = 10000m2 - 1m2 = 10-4 ha)
     dplyr::rename(lon = lon.x, lat = lat.x) %>%
     dplyr::select(-lat.y, -lon.y)
   
@@ -537,7 +568,7 @@ map_dens_per_grid_species_log_with_zero <- function(maplatlonproj, polyobs, poly
                    legend.text = ggplot2::element_text(size = 11),
                    legend.title = ggplot2::element_text(hjust = 0.5, size = 13)) +
     ggplot2::scale_color_gradient(low = "bisque1", high = "red3", na.value = NA,
-                                  name = "Log \nind / ha") 
+                                  name = "Log ind/0.25km2") #ie 250000m2
     
   ggplot2::ggsave(here::here(paste0("outputs/map_dens_per_grid_", species, "_log_with_zero.png")), map, width = 7, height = 5)
   
@@ -545,5 +576,87 @@ map_dens_per_grid_species_log_with_zero <- function(maplatlonproj, polyobs, poly
 
 
 
+
+
+
+#' Map density per grid cell for given species with zeros (nb of observations / (length of tracks in meters * footprint_width in meters))
+#'
+#' @param polyobs
+#' @param polytracks
+#' @param footprintwidth
+#' @param species
+#' @param maplatlonproj
+#' @param size 
+#'
+#' @return
+#' @export
+#'
+
+map_dens_per_grid_species_with_zero <- function(maplatlonproj, polyobs, polytracks, footprintwidth, species, size){
+  
+  # select polygons with counts of species
+  polyobs2 = polyobs %>%
+    dplyr::filter(object == species)
+  
+  # convert back to spatial object for plotting
+  polyobs3 = sf::as_Spatial(polyobs2)
+  
+  # make dataframe for plotting
+  counts = data.frame(id = polyobs3$id,
+                      count = polyobs3$n,
+                      date = polyobs3$date,
+                      lon = coordinates(polyobs3)[,1],
+                      lat = coordinates(polyobs3)[,2])
+  
+  #IMPORTANT to sum counts per cell across all flights
+  counts2 = counts %>%
+    dplyr::group_by(id, lat, lon) %>%
+    dplyr::summarise(tot_count = sum(count)) %>%
+    dplyr::filter(tot_count > 0)
+  
+  # convert back to spatial object for plotting (in meters)
+  polytracks2 = sf::as_Spatial(polytracks)
+  
+  # make dataframe for plotting
+  effort = data.frame(id = polytracks2$id,
+                      length = as.numeric(polytracks2$length), #convert class units to numeric
+                      lon = coordinates(polytracks2)[,1],
+                      lat = coordinates(polytracks2)[,2])
+  
+  # sum length per grid cell and select polygons with effort > 0
+  effort2 = effort %>%
+    dplyr::group_by(id, lat, lon) %>%
+    dplyr::summarise(tot_length = sum(length)) %>% #IMPORTANT to sum lenght per cell across all flights
+    dplyr::filter(tot_length > 0)
+  
+  # merge effort and counts based on polygon id and calculate density
+  result = counts2 %>%
+    dplyr::left_join(effort2, by = "id") %>%
+    dplyr::mutate(density = tot_count / (tot_length*footprintwidth))  %>% #density in indiv/m2
+    dplyr::mutate(density = density * 250000)  %>%  #density in indiv/50000m2 (1 ha = 10000m2 - 1m2 = 10-4 ha)
+    dplyr::rename(lon = lon.x, lat = lat.x) %>%
+    dplyr::select(-lat.y, -lon.y)
+  
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlonproj) + ##convert OSM to ggplot2 format and add merged results
+    ##add cells were there were tracks with no observations (ie zeros)
+    ggplot2::geom_point(data = effort2, ggplot2::aes(x = lon, y = lat), color = "white", shape = 15, size = size, alpha = 0.4) +
+    ggplot2::geom_point(data = result, ggplot2::aes(x = lon, y = lat, color = density), shape = 15, size = size, alpha = 1) +
+    #ggplot2::theme_minimal() +
+    ggplot2::ggtitle(species) +
+    ggplot2::theme(axis.title = ggplot2::element_blank(),
+                   axis.text = ggplot2::element_blank(),
+                   axis.ticks = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5, size = 18),
+                   panel.background = ggplot2::element_blank(),
+                   panel.grid.major.y = ggplot2::element_blank(),
+                   panel.grid.minor = ggplot2::element_blank(),
+                   legend.text = ggplot2::element_text(size = 11),
+                   legend.title = ggplot2::element_text(hjust = 0.5, size = 13)) +
+    ggplot2::scale_color_gradient(low = "bisque1", high = "red3", na.value = NA,
+                                  name = "ind/0.25km2")  #ie 250000m2
+  
+  ggplot2::ggsave(here::here(paste0("outputs/map_dens_per_grid_", species, "_with_zero.png")), map, width = 7, height = 5)
+  
+}
 
 
