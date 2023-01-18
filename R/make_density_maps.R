@@ -276,10 +276,12 @@ count_obs_per_grid_per_date <- function(polygon, telem_obs){
   #project points
   points = sf::st_transform(points, CRS("+init=epsg:3163")) #NC projection
   
-  # Intersection between polygon and points and count nb of points per date per object
+  # Intersection between polygon and points and count nb of indiv per date per object
   sf::st_intersection(x = polygon, y = points) %>%
     dplyr::group_by(id, date, object) %>%
-    dplyr::count() %>%
+    #count nb of indiv (already corrected for availability bias)
+    dplyr::summarise(n_count_avail_corrected = sum(n_count_avail_corrected)) %>% 
+    dplyr::select(id, date, object, n_count_avail_corrected) %>%
     sf::st_drop_geometry() -> intersection
   
   #join polygon with points
@@ -315,7 +317,7 @@ map_obs_per_grid_per_date_species <- function(maplatlonproj, polygon, species, s
   
   # make dataframe for plotting
   counts = data.frame(id = polygon3$id,
-                      count = polygon3$n,
+                      count = polygon3$n_count_avail_corrected,
                       date = polygon3$date,
                       lon = coordinates(polygon3)[,1],
                       lat = coordinates(polygon3)[,2])
@@ -355,6 +357,89 @@ map_obs_per_grid_per_date_species <- function(maplatlonproj, polygon, species, s
 
 
 
+
+
+#' Map number of observations per grid cell per date for given species with zeros
+#'
+#' @param maplatlonproj
+#' @param polygon
+#' @param species 
+#' @param size 
+#'
+#' @return
+#' @export
+#'
+#'
+map_obs_per_grid_per_date_species_with_zero <- function(maplatlonproj, polygon, polytracks, species, size){
+  
+  # select polygons with counts > 0 for species
+  polygon2 = polygon %>%
+    dplyr::filter(object == species)
+  
+  # convert back to spatial object for plotting
+  polygon3 = sf::as_Spatial(polygon2)
+  
+  # make dataframe for plotting
+  counts = data.frame(id = polygon3$id,
+                      count = polygon3$n_count_avail_corrected,
+                      date = polygon3$date,
+                      lon = coordinates(polygon3)[,1],
+                      lat = coordinates(polygon3)[,2])
+  
+  dates = unique(counts$date)
+  
+  # convert back to spatial object for plotting (in meters)
+  polytracks2 = sf::as_Spatial(polytracks)
+  
+  # make dataframe for plotting
+  effort = data.frame(id = polytracks2$id,
+                      length = as.numeric(polytracks2$length), #convert class units to numeric
+                      date = polytracks2$date,
+                      lon = coordinates(polytracks2)[,1],
+                      lat = coordinates(polytracks2)[,2])
+  
+  # sum length per grid cell and select polygons with effort > 0
+  effort2 = effort %>%
+    dplyr::group_by(id, lat, lon, date) %>%
+    dplyr::summarise(tot_length = sum(length)) %>% #IMPORTANT to sum lenght per cell across all flights
+    dplyr::filter(tot_length > 0)
+  
+  #map1
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlonproj) + ##convert OSM to ggplot2 format
+    #add cells were there were tracks with no observations (ie zeros)
+    ggplot2::geom_point(data = subset(effort2, effort2$date %in% dates[1:3]), ggplot2::aes(x = lon, y = lat), color = "white", shape = 15, size = size, alpha = 0.4) +
+    ggplot2::geom_point(data = subset(counts, counts$date %in% dates[1:3]), ggplot2::aes(x = lon, y = lat, color = count), shape = 15, size=size, alpha = 1) +
+    ggplot2::facet_wrap(~date, nrow = 2, ncol = 2) +
+    ggplot2::ggtitle(species) +
+    ggplot2::theme(axis.title = ggplot2::element_blank(),
+                   axis.text = ggplot2::element_blank(),
+                   axis.ticks = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5)) +
+    ggplot2::scale_color_gradient(low = "bisque1", high = "red3", na.value = NA,
+                                  name = "individuals")
+  
+  ggplot2::ggsave(here::here(paste0("outputs/map_obs_per_grid_per_date_", species, "_with_zero_1.png")), map, width = 8, height = 6)
+  
+  #map2
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlonproj) + ##convert OSM to ggplot2 format
+    #add cells were there were tracks with no observations (ie zeros)
+    ggplot2::geom_point(data = subset(effort2, effort2$date %in% dates[4:7]), ggplot2::aes(x = lon, y = lat), color = "white", shape = 15, size = size, alpha = 0.4) +
+    ggplot2::geom_point(data = subset(counts, counts$date %in% dates[4:7]), ggplot2::aes(x = lon, y = lat, color = count), shape = 15, size=size, alpha = 1) +
+    ggplot2::facet_wrap(~date, nrow = 2, ncol = 2) +
+    ggplot2::ggtitle(species) +
+    ggplot2::theme(axis.title = ggplot2::element_blank(),
+                   axis.text = ggplot2::element_blank(),
+                   axis.ticks = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5)) +
+    ggplot2::scale_color_gradient(low = "bisque1", high = "red3", na.value = NA,
+                                  name = "individuals")
+  
+  ggplot2::ggsave(here::here(paste0("outputs/map_obs_per_grid_per_date_", species, "_with_zero_2.png")), map, width = 8, height = 6)
+  
+}
+
+
+
 #' Map number of observations per grid cell for given species 
 #'
 #' @param maplatlonproj
@@ -377,7 +462,7 @@ map_obs_per_grid_species <- function(maplatlonproj, polygon, species, size){
   
   # make dataframe for plotting
   counts = data.frame(id = polygon3$id,
-                      count = polygon3$n,
+                      count = polygon3$n_count_avail_corrected,
                       date = polygon3$date,
                       lon = coordinates(polygon3)[,1],
                       lat = coordinates(polygon3)[,2])
@@ -406,6 +491,73 @@ map_obs_per_grid_species <- function(maplatlonproj, polygon, species, size){
 
 
 
+#' Map number of observations per grid cell for given species with zeros
+#'
+#' @param maplatlonproj
+#' @param polygon
+#' @param species 
+#' @param size 
+#'
+#' @return
+#' @export
+#'
+
+map_obs_per_grid_species_with_zero <- function(maplatlonproj, polygon, polytracks, species, size){
+  
+  # select polygons with counts > 0 for species
+  polygon2 = polygon %>%
+    dplyr::filter(object == species)
+  
+  # convert back to spatial object for plotting
+  polygon3 = sf::as_Spatial(polygon2)
+  
+  # make dataframe for plotting
+  counts = data.frame(id = polygon3$id,
+                      count = polygon3$n_count_avail_corrected,
+                      date = polygon3$date,
+                      lon = coordinates(polygon3)[,1],
+                      lat = coordinates(polygon3)[,2])
+  
+  #IMPORTANT to sum counts per cell across all flights
+  counts2 = counts %>%
+    dplyr::group_by(id, lat, lon) %>%
+    dplyr::summarise(tot_count = sum(count)) %>%
+    dplyr::filter(tot_count > 0)
+  
+  # convert back to spatial object for plotting (in meters)
+  polytracks2 = sf::as_Spatial(polytracks)
+  
+  # make dataframe for plotting
+  effort = data.frame(id = polytracks2$id,
+                      length = as.numeric(polytracks2$length), #convert class units to numeric
+                      lon = coordinates(polytracks2)[,1],
+                      lat = coordinates(polytracks2)[,2])
+  
+  # sum length per grid cell and select polygons with effort > 0
+  effort2 = effort %>%
+    dplyr::group_by(id, lat, lon) %>%
+    dplyr::summarise(tot_length = sum(length)) %>% #IMPORTANT to sum lenght per cell across all flights
+    dplyr::filter(tot_length > 0)
+  
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlonproj) + ##convert OSM to ggplot2 format and add merged results
+    #add cells were there were tracks with no observations (ie zeros)
+    ggplot2::geom_point(data = effort2, ggplot2::aes(x = lon, y = lat), color = "white", shape = 15, size = size, alpha = 0.4) +
+    ggplot2::geom_point(data = counts2, ggplot2::aes(x = lon, y = lat, color = tot_count), shape = 15, size = size, alpha = 1) +
+    #ggplot2::theme_minimal() +
+    ggplot2::ggtitle(species) +
+    ggplot2::theme(axis.title = ggplot2::element_blank(),
+                   axis.text = ggplot2::element_blank(),
+                   axis.ticks = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5)) +
+    ggplot2::scale_color_gradient(low = "bisque1", high = "red3", na.value = NA,
+                                  name = "individuals")
+  
+  ggplot2::ggsave(here::here(paste0("outputs/map_obs_per_grid_", species, "_with_zero.png")), map, width = 7, height = 5)
+  
+}
+
+
+
 #' Map density per grid cell for given species per date (nb of observations / (length of tracks in meters * footprint_width in meters))
 #'
 #' @param polyobs
@@ -431,7 +583,7 @@ map_dens_per_grid_per_date_species <- function(maplatlonproj, polyobs, polytrack
   
   # make dataframe for plotting
   counts = data.frame(id = polyobs3$id,
-                      count = polyobs3$n,
+                      count = polyobs3$n_count_avail_corrected,
                       date = polyobs3$date,
                       lon = coordinates(polyobs3)[,1],
                       lat = coordinates(polyobs3)[,2])
@@ -455,7 +607,7 @@ map_dens_per_grid_per_date_species <- function(maplatlonproj, polyobs, polytrack
   result = counts %>%
     dplyr::right_join(effort2, by = c("id", "date")) %>%
     dplyr::mutate(density = count / (length*footprintwidth))  %>% #density in indiv/m2
-    dplyr::mutate(density = density * 250000)  %>%  #density in indiv/250000m2 (1 ha = 10000m2 - 1m2 = 10-4 ha)
+    dplyr::mutate(density = density * 10000)  %>%  #density in indiv/10000m2 or indiv/0.1km2 (1 ha = 10000m2 - 1m2 = 10-4 ha)
     dplyr::rename(lon = lon.x, lat = lat.x) %>%
     dplyr::select(-lat.y, -lon.y)
   
@@ -471,7 +623,7 @@ map_dens_per_grid_per_date_species <- function(maplatlonproj, polyobs, polytrack
                      axis.ticks = ggplot2::element_blank(),
                      plot.title = ggplot2::element_text(hjust = 0.5)) +
       ggplot2::scale_color_gradient(low = "dark grey", high = "red", na.value = NA,
-                                    name = "indiv/0.25km2") #ie 250000m2
+                                    name = "indiv/0.1km2") #ie 10000m2
     
   ggplot2::ggsave(here::here(paste0("outputs/map_dens_per_grid_per_date_", species, "1.png")), map, width = 7, height = 5)
   
@@ -485,7 +637,7 @@ map_dens_per_grid_per_date_species <- function(maplatlonproj, polyobs, polytrack
                    axis.ticks = ggplot2::element_blank(),
                    plot.title = ggplot2::element_text(hjust = 0.5)) +
     ggplot2::scale_color_gradient(low = "dark grey", high = "red", na.value = NA,
-                                  name = "indiv/0.25km2") #ie 250000m2
+                                  name = "indiv/0.1km2") #ie 10000m2
   
   ggplot2::ggsave(here::here(paste0("outputs/map_dens_per_grid_per_date_", species, "2.png")), map, width = 7, height = 5)
     
@@ -518,7 +670,7 @@ map_dens_per_grid_species_log_with_zero <- function(maplatlonproj, polyobs, poly
   
   # make dataframe for plotting
   counts = data.frame(id = polyobs3$id,
-                      count = polyobs3$n,
+                      count = polyobs3$n_count_avail_corrected,
                       date = polyobs3$date,
                       lon = coordinates(polyobs3)[,1],
                       lat = coordinates(polyobs3)[,2])
@@ -548,7 +700,7 @@ map_dens_per_grid_species_log_with_zero <- function(maplatlonproj, polyobs, poly
   result = counts2 %>%
     dplyr::left_join(effort2, by = "id") %>%
     dplyr::mutate(density = tot_count / (tot_length*footprintwidth))  %>% #density in indiv/m2
-    dplyr::mutate(density = density * 250000)  %>%  #density in indiv/250000m2 (1 ha = 10000m2 - 1m2 = 10-4 ha)
+    dplyr::mutate(density = density * 10000)  %>%  #density in indiv/10000m2 or indiv/0.1km2 (1 ha = 10000m2 - 1m2 = 10-4 ha)
     dplyr::rename(lon = lon.x, lat = lat.x) %>%
     dplyr::select(-lat.y, -lon.y)
   
@@ -568,7 +720,7 @@ map_dens_per_grid_species_log_with_zero <- function(maplatlonproj, polyobs, poly
                    legend.text = ggplot2::element_text(size = 11),
                    legend.title = ggplot2::element_text(hjust = 0.5, size = 13)) +
     ggplot2::scale_color_gradient(low = "bisque1", high = "red3", na.value = NA,
-                                  name = "Log ind/0.25km2") #ie 250000m2
+                                  name = "Log ind/0.1km2") #ie 10000m2
     
   ggplot2::ggsave(here::here(paste0("outputs/map_dens_per_grid_", species, "_log_with_zero.png")), map, width = 7, height = 5)
   
@@ -603,7 +755,7 @@ map_dens_per_grid_species_with_zero <- function(maplatlonproj, polyobs, polytrac
   
   # make dataframe for plotting
   counts = data.frame(id = polyobs3$id,
-                      count = polyobs3$n,
+                      count = polyobs3$n_count_avail_corrected,
                       date = polyobs3$date,
                       lon = coordinates(polyobs3)[,1],
                       lat = coordinates(polyobs3)[,2])
@@ -633,7 +785,7 @@ map_dens_per_grid_species_with_zero <- function(maplatlonproj, polyobs, polytrac
   result = counts2 %>%
     dplyr::left_join(effort2, by = "id") %>%
     dplyr::mutate(density = tot_count / (tot_length*footprintwidth))  %>% #density in indiv/m2
-    dplyr::mutate(density = density * 250000)  %>%  #density in indiv/50000m2 (1 ha = 10000m2 - 1m2 = 10-4 ha)
+    dplyr::mutate(density = density * 10000)  %>%  #density in indiv/10000m2 or indiv/0.1km2 (1 ha = 10000m2 - 1m2 = 10-4 ha)
     dplyr::rename(lon = lon.x, lat = lat.x) %>%
     dplyr::select(-lat.y, -lon.y)
   
@@ -653,7 +805,7 @@ map_dens_per_grid_species_with_zero <- function(maplatlonproj, polyobs, polytrac
                    legend.text = ggplot2::element_text(size = 11),
                    legend.title = ggplot2::element_text(hjust = 0.5, size = 13)) +
     ggplot2::scale_color_gradient(low = "bisque1", high = "red3", na.value = NA,
-                                  name = "ind/0.25km2")  #ie 250000m2
+                                  name = "ind/0.1km2")  #ie 10000m2
   
   ggplot2::ggsave(here::here(paste0("outputs/map_dens_per_grid_", species, "_with_zero.png")), map, width = 7, height = 5)
   

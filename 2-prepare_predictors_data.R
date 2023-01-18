@@ -37,6 +37,9 @@ coral_millenium = read_original_coralnc_millenium()
 # Make distance to mainland raster
 dist_land = make_dist_to_land_raster(coral_millenium, rast_xy)
 
+# mask to remove land
+dist_land = mask_with_land(dist_land, dist_land)
+
 # Map distance to mainland raster
 map_dist_to_land(dist_land)
 
@@ -46,7 +49,25 @@ raster::writeRaster(dist_land, here::here("data", "processed_data", "predictors"
 
 
 
-######################################## CORAL (ALLEN ATLAS) ########################################
+######################################## TRAVEL TIME ########################################
+
+# load travel time raster from FB (corresponding to travel times from Nouméa (seconds) in 1 x 1 km cell)
+# and resample
+travel_time = load_travel_time_raster(rast_xy) # **** reextract based on full survey coverage ??
+
+# mask based on dist to mainland raster
+travel_time = mask_with_land(travel_time, dist_land)
+
+# Map original travel time
+map_travel_time(travel_time)
+
+# write raster
+raster::writeRaster(travel_time, here::here("data", "processed_data", "predictors", "travel_time.grd"), overwrite=TRUE)
+
+
+
+
+######################################## BENTHIC CORAL SUBSTRATE (ALLEN ATLAS) ########################################
 
 #read Allen coral benthic polygon
 coral = read_convert_coral_benthic(lon1, lon2, lat2, lat1)
@@ -99,13 +120,13 @@ percent_sand = mask_with_land(percent_sand, dist_land)
 percent_rock = mask_with_land(percent_rock, dist_land)
 
 
-# assign zeros where habitat/geomorpho type is absent
-percent_rubble = assign_zeros_where_absent_type(percent_rubble, geom_projected, rastxy) 
-percent_coral_algae = assign_zeros_where_absent_type(percent_coral_algae, geom_projected, rastxy) 
-percent_microalgal_mats = assign_zeros_where_absent_type(percent_microalgal_mats, geom_projected, rastxy) 
-percent_seagrass = assign_zeros_where_absent_type(percent_seagrass, geom_projected, rastxy) 
-percent_sand = assign_zeros_where_absent_type(percent_sand, geom_projected, rastxy) 
-percent_rock = assign_zeros_where_absent_type(percent_rock, geom_projected, rastxy) 
+# assign zeros where habitat/geomorpho type is absent using travel time raster as mask
+percent_rubble = assign_zeros_where_absent_type2(percent_rubble, travel_time) 
+percent_coral_algae = assign_zeros_where_absent_type2(percent_coral_algae, travel_time) 
+percent_microalgal_mats = assign_zeros_where_absent_type2(percent_microalgal_mats, travel_time) 
+percent_seagrass = assign_zeros_where_absent_type2(percent_seagrass, travel_time) 
+percent_sand = assign_zeros_where_absent_type2(percent_sand, travel_time) 
+percent_rock = assign_zeros_where_absent_type2(percent_rock, travel_time) 
 
 
 #map
@@ -129,7 +150,7 @@ raster::writeRaster(percent_rock, here::here("data", "processed_data", "predicto
 
 
 
-######################################## GEOMORPHO (ALLEN ATLAS) ########################################
+######################################## GEOMORPHOLOGY (ALLEN ATLAS) ########################################
 
 
 #read Allen coral geomorpho polygon
@@ -195,15 +216,15 @@ percent_terrestrial_reef_flat = mask_with_land(percent_terrestrial_reef_flat, di
 
 
 # assign zeros where habitat/geomorpho type is absent
-percent_back_reef_slope = assign_zeros_where_absent_type(percent_back_reef_slope, geom_projected, rastxy) 
-percent_deep_lagoon = assign_zeros_where_absent_type(percent_deep_lagoon, geom_projected, rastxy) 
-percent_inner_reef_flat = assign_zeros_where_absent_type(percent_inner_reef_flat, geom_projected, rastxy) 
-percent_outer_reef_flat = assign_zeros_where_absent_type(percent_outer_reef_flat, geom_projected, rastxy) 
-percent_plateau = assign_zeros_where_absent_type(percent_plateau, geom_projected, rastxy) 
-percent_reef_crest = assign_zeros_where_absent_type(percent_reef_crest, geom_projected, rastxy) 
-percent_reef_slope = assign_zeros_where_absent_type(percent_reef_slope, geom_projected, rastxy) 
-percent_shallow_lagoon = assign_zeros_where_absent_type(percent_shallow_lagoon, geom_projected, rastxy) 
-percent_terrestrial_reef_flat = assign_zeros_where_absent_type(percent_terrestrial_reef_flat, geom_projected, rastxy) 
+percent_back_reef_slope = assign_zeros_where_absent_type(percent_back_reef_slope, geom_projected, rast_xy) 
+percent_deep_lagoon = assign_zeros_where_absent_type(percent_deep_lagoon, geom_projected, rast_xy) 
+percent_inner_reef_flat = assign_zeros_where_absent_type(percent_inner_reef_flat, geom_projected, rast_xy) 
+percent_outer_reef_flat = assign_zeros_where_absent_type(percent_outer_reef_flat, geom_projected, rast_xy) 
+percent_plateau = assign_zeros_where_absent_type(percent_plateau, geom_projected, rast_xy) 
+percent_reef_crest = assign_zeros_where_absent_type(percent_reef_crest, geom_projected, rast_xy) 
+percent_reef_slope = assign_zeros_where_absent_type(percent_reef_slope, geom_projected, rast_xy) 
+percent_shallow_lagoon = assign_zeros_where_absent_type(percent_shallow_lagoon, geom_projected, rast_xy) 
+percent_terrestrial_reef_flat = assign_zeros_where_absent_type(percent_terrestrial_reef_flat, geom_projected, rast_xy) 
 
   
 
@@ -233,20 +254,21 @@ raster::writeRaster(percent_terrestrial_reef_flat, here::here("data", "processed
 
 
 
-######################################## TRAVEL TIME ########################################
 
-# load travel time raster from FB (corresponding to travel times from Nouméa (seconds) in 1 x 1 km cell)
-# and resample
-travel_time = load_travel_time_raster(rast_xy) # **** reextract based on full survey coverage ??
+######################################## TURBIDITY (ALLEN ATLAS) ########################################
+
+# read quaterly turbidity and produce average raster
+turb = read_average_resample_turbidity(lon1, lon2, lat2, lat1, rast_xy)
 
 # mask based on dist to mainland raster
-travel_time = mask_with_land(travel_time, dist_land)
+turb = mask_with_land(turb, dist_land)
 
-# Map original travel time
-map_travel_time(travel_time)
+#map turbidity
+map_turbidity(turb)
 
 # write raster
-raster::writeRaster(travel_time, here::here("data", "processed_data", "predictors", "travel_time.grd"), overwrite=TRUE)
+raster::writeRaster(turb, here::here("data", "processed_data", "predictors", "turbidity.grd"), overwrite=TRUE)
+
 
 
 
@@ -388,4 +410,23 @@ raster::writeRaster(dist_reef, here::here("data", "processed_data", "predictors"
 
 
 
-### TO DO DEPTH SST others?
+
+
+######################################## DISTANCE TO SEAGRASS ########################################
+
+
+# Make distance to seagrass raster 
+dist_seagrass = make_dist_to_seagrass_raster(coral, rast_xy)
+
+# mask based on dist to mainland raster
+dist_seagrass = mask_with_land(dist_seagrass, dist_land)
+
+# Map distance to seagrass raster
+map_dist_to_seagrass(dist_seagrass)
+
+# write raster
+raster::writeRaster(dist_seagrass, here::here("data", "processed_data", "predictors", "dist_seagrass.grd"), overwrite=TRUE)
+
+
+
+

@@ -58,6 +58,53 @@ read_convert_coral_geomorpho <- function(lon1, lon2, lat2, lat1){
 
 
 
+#' Read New Caledonia Allen coral quaterly turbidity, produce average raster and resample
+#'
+#' @param lon1
+#' @param lon2
+#' @param lat2
+#' @param lat1
+#'
+#' @return
+#' @export
+#'
+
+read_average_resample_turbidity <- function(lon1, lon2, lat2, lat1, rast){
+  
+  # read quaterly rasters
+  turb_q2 = raster::raster("data/raw_data/allen/Turbidity-Q2-2021/turbidity-quarterly_0.tif")
+  turb_q3 = raster::raster("data/raw_data/allen/Turbidity-Q3-2021/turbidity-quarterly_0.tif")
+  
+  #crop
+  turb_q2 = raster::crop(turb_q2, raster::extent(lon1, lon2, lat2, lat1))
+  turb_q3 = raster::crop(turb_q3, raster::extent(lon1, lon2, lat2, lat1))
+  
+  #stack
+  turb = raster::stack(turb_q2, turb_q3)
+  
+  #mean
+  turb_mean = raster::mean(turb[[1:2]], na.rm = TRUE)
+  
+  #aggregate into coarser resolution
+  turb_aggr = raster::aggregate(turb_mean, fact = 10, fun=mean)
+  
+  #project
+  turb_proj = raster::projectRaster(turb_aggr, crs = "+init=epsg:3163") #project to lambert NC
+  
+  #resample
+  turb_resamp = raster::resample(turb_proj, rast)
+  
+  #rename
+  names(turb_resamp) = "turbidity"
+  
+  return(turb_resamp)
+  
+}
+
+
+
+
+
 #' Make coverage raster for each habitat type
 #'
 #' @param cor 
@@ -99,6 +146,42 @@ make_raster_coral_benthic_type <- function(cor, r_xy, hab_type){
 }
 
 
+
+
+#' Make distance to seagrass raster
+#'
+#' @param coral
+#' @param raster
+#'
+#' @return
+#' @export
+#'
+
+make_dist_to_seagrass_raster <- function(cor, raster){
+  
+  # Extract polygon of seagrass from coral shapefil
+  seagrass <- coral[coral@data$class ==  "Seagrass", ]
+  
+  #project
+  seagrass = sp::spTransform(seagrass, sp::CRS("+init=epsg:3163")) #project to lambert NC
+  
+  # Calculate distance of raster cells to seagrass 
+  cat('calculating distance \n')
+  pts = as(raster, "SpatialPoints")
+  length(pts)
+  dd = rgeos::gDistance(seagrass, pts, byid=TRUE)
+  # This creates a matrix with a column for each feature in seagrass
+  
+  # To get the nearest distance (meters) to any feature, apply min over rows:
+  raster[] = apply(dd, 1, min) #---------warning message
+  # raster::plot(raster)
+  
+  # rename
+  names(raster) = "dist_seagrass"
+  
+  return(raster)
+  
+}
 
 
 
@@ -155,7 +238,7 @@ make_raster_coral_geomorpho_type <- function(cor, r_xy, geom_type){
 
 
 
-#' assign zeros where habitat/geomorpho type is absent
+#' assign zeros where habitat/geomorpho type is absent using habitat/geomorpho polygons
 #'
 #' @param cor 
 #' @param r 
@@ -186,6 +269,38 @@ assign_zeros_where_absent_type <- function(cor, r, rastxy){
 }
 
 
+
+
+
+#' assign zeros where habitat/geomorpho type is absent using travel time raster as mask ***todo replace traveltime raster by raster derived from allen polygons - see untitled 2
+#'
+#' @param cor 
+#' @param mask 
+#'
+#' @return
+#' @export
+#'
+
+assign_zeros_where_absent_type2 <- function(cor, mask){
+  
+  #convert non na value to 0
+  mask[!is.na(mask[])] = 0 
+  
+  #mask
+  rnew = raster::mask(cor, mask, updateNA = TRUE, updatevalue = 0)
+  
+  #assign 0s where NAs
+  rnew[is.na(rnew[])] = 0
+  
+  #mask a second time to replace 0s with NAs where land
+  rnew = mask(rnew, mask)
+  
+  return(rnew)
+  
+}
+  
+  
+  
 #' Load original travel time raster (in seconds) from Florian Baletaud and resample
 #'
 #' @param rast 
@@ -276,6 +391,23 @@ make_population_raster <- function(raster){
   names(idw) <- "population"
     
   return(idw)
+  
+}
+
+
+#' Map turbidity raster
+#'
+#' @param raster
+#'
+#' @return
+#' @export
+#'
+
+map_turbidity <- function(raster){
+  
+  png(here::here("outputs", "predictors", "map_turbidity.png"), width = 960, height = 480)
+  raster::plot(raster, main = "turbidity")
+  dev.off()
   
 }
 
@@ -452,7 +584,7 @@ map_dist_to_land <- function(raster){
 
 make_dist_to_reef_raster <- function(coral, raster){
   
-  # Extract polygon of reef from coral shapefil
+  # Extract polygon of reef from coral shapefile
   coralreef <- coral[coral@data$reef ==  1, ]
   
   cat('calculating distance\n')
@@ -492,6 +624,21 @@ map_dist_to_reef <- function(raster){
 }
 
 
+#' Map distance to seagrass raster
+#'
+#' @param raster
+#'
+#' @return
+#' @export
+#'
+
+map_dist_to_seagrass <- function(raster){
+  
+  png(here::here("outputs", "predictors", "map_dist_to_seagrass.png"), width = 960, height = 480)
+  raster::plot(raster, main = "distance (m)")
+  dev.off()
+  
+}
 
 
 
@@ -753,6 +900,8 @@ read_resample_depth <- function(rastlatlon, rastxy){
   # resample depth raster with study area raster
   depthnew = raster::resample(depthproj, rastxy)
   
+  names(depthnew) = "depth"
+  
   return(depthnew)
 }
 
@@ -792,10 +941,9 @@ extend_raster <- function(r, rast){
 
 
 
+ 
 
-# Mask based on dist to mainland raster
-
-#' Title
+#' Mask based on dist to mainland raster
 #'
 #' @param r 
 #' @param mask 

@@ -384,6 +384,114 @@ select_telemetry_wcoast <- function(telem, ls_vids){
 
 
 
+#' Read off effort portion west coast
+#'
+#' @return
+#' @export
+#'
+
+read_off_effort_wcoast <- function(){
+  
+  off = readxl::read_excel(here::here("data", "raw_data", "telemetry", "Transects.xlsx"), col_types = c("date", "text", rep("numeric", 4), "text"), col_names = TRUE)
+  
+  return(off)
+  
+}
+
+
+
+
+
+#' Clean off effort portion related to transits west coast
+#'
+#' @param off
+#'
+#' @return
+#' @export
+#'
+
+clean_off_effort_transit_wcoast <- function(off){
+  
+  off %>%
+    #rename
+    dplyr::mutate(start_transit_image_id = Début_transit,
+                  end_transit_image_id = Fin_transit) %>%
+    #convert column names to lower case
+    dplyr::rename_with(tolower) %>%
+    #select
+    dplyr::select(c(start_transit_image_id, end_transit_image_id, video_id)) %>%
+    #drop nas
+    tidyr::drop_na() -> off_new
+  
+  return(off_new)
+  
+}
+
+
+
+
+
+#' Clean off effort portion related to loops west coast
+#'
+#' @param off
+#'
+#' @return
+#' @export
+#'
+
+clean_off_effort_loop_wcoast <- function(off){
+  
+  off %>%
+    #rename
+    dplyr::mutate(start_loop_image_id = Début_boucle,
+                  end_loop_image_id = Fin_boucle) %>%
+    #convert column names to lower case
+    dplyr::rename_with(tolower) %>%
+    #select
+    dplyr::select(c(start_loop_image_id, end_loop_image_id, video_id)) %>%
+    #drop nas
+    tidyr::drop_na() -> off_new
+  
+  return(off_new)
+  
+}
+
+
+
+
+#' Select on effort data (telemetry or observations) west coast
+#'
+#' @param telem
+#' @param off
+#'
+#' @return
+#' @export
+#'
+
+select_on_effort_wcoast <- function(telem, off_transit, off_loop){
+  
+  #get list of off effort points related to loop
+  off_loop = mapply(function(x, y, z) paste0(x, "_", y:z),
+                    off_loop$video_id,
+                    off_loop$start_loop_image_id,
+                    off_loop$end_loop_image_id)
+  
+  #get list of off effort points related to transit
+  off_transit = mapply(function(x, y, z) paste0(x, "_", y:z),
+                       off_transit$video_id,
+                       off_transit$start_transit_image_id,
+                       off_transit$end_transit_image_id)
+  
+  telem %>%
+    #filter off effort points related to loop
+    dplyr::filter(!image_id %in% unlist(off_loop)) %>%
+    #filter off effort points related to transit
+    dplyr::filter(!image_id %in% unlist(off_transit)) -> telem_on_effort
+  
+  return(telem_on_effort)
+  
+}
+
 
 
 

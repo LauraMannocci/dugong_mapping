@@ -16,6 +16,9 @@ make_df_all_species <- function(polyobs, polytracks, footprintwidth){
   
   ### polyobs
   
+  polyobs %>% 
+    dplyr::rename(n = n_count_avail_corrected) -> polyobs
+  
   #to avoid errors when replacing nas
   polyobs$object = as.character(polyobs$object)
   
@@ -82,34 +85,34 @@ make_df_all_species <- function(polyobs, polytracks, footprintwidth){
     dplyr::right_join(polytracks4, by = c("id"))  %>%
     #compute desnity per date and per species
     dplyr::mutate(dplyr::across(tidyselect::ends_with("2021_08_04"),
-                                .fns = function(x){250000 * x/(length_2021_08_04*footprintwidth)}, #density converted from ind/m2 to in indiv / 250000m2 (=0.25 km2)
+                                .fns = function(x){10000 * x/(length_2021_08_04*footprintwidth)}, #density converted from ind/m2 to in indiv / 10000m2 (=0.1 km2 or 100m x 100m)
                                 .names = "density_{.col}")) %>%
     dplyr::mutate(dplyr::across(tidyselect::ends_with("2021_06_21"),
-                                .fns = function(x){250000 * x/(length_2021_06_21*footprintwidth)}, 
+                                .fns = function(x){10000 * x/(length_2021_06_21*footprintwidth)}, 
                                 .names = "density_{.col}")) %>%
     dplyr::mutate(dplyr::across(tidyselect::ends_with("2021_07_29"),
-                                .fns = function(x){250000 * x/(length_2021_07_29*footprintwidth)}, 
+                                .fns = function(x){10000 * x/(length_2021_07_29*footprintwidth)}, 
                                 .names = "density_{.col}")) %>%
     dplyr::mutate(dplyr::across(tidyselect::ends_with("2021_06_16"),
-                                .fns = function(x){250000 * x/(length_2021_06_16*footprintwidth)}, 
+                                .fns = function(x){10000 * x/(length_2021_06_16*footprintwidth)}, 
                                 .names = "density_{.col}")) %>%
     dplyr::mutate(dplyr::across(tidyselect::ends_with("2021_06_22"),
-                                .fns = function(x){250000 * x/(length_2021_06_22*footprintwidth)},
+                                .fns = function(x){10000 * x/(length_2021_06_22*footprintwidth)},
                                 .names = "density_{.col}")) %>%
     dplyr::mutate(dplyr::across(tidyselect::ends_with("2021_06_04"),
-                                .fns = function(x){250000 * x/(length_2021_06_04*footprintwidth)}, 
+                                .fns = function(x){10000 * x/(length_2021_06_04*footprintwidth)}, 
                                 .names = "density_{.col}")) %>%
     dplyr::mutate(dplyr::across(tidyselect::ends_with("2021_06_05"),
-                                .fns = function(x){250000 * x/(length_2021_06_05*footprintwidth)}, 
+                                .fns = function(x){10000 * x/(length_2021_06_05*footprintwidth)}, 
                                 .names = "density_{.col}")) %>%
     #compute density per species
-    dplyr::mutate(density_Turtle = 250000 * n_Turtle / (length*footprintwidth)) %>%  #density converted from ind/m2 to in indiv / 250000m2 (=0.25 km2)
-    dplyr::mutate(density_Dugong_certain_probable = 250000 * n_Dugong_certain_probable / (length*footprintwidth)) %>%  
-    dplyr::mutate(density_Round_ray = 250000 * n_Round_ray / (length*footprintwidth)) %>% 
-    dplyr::mutate(density_Eagle_ray = 250000 * n_Eagle_ray / (length*footprintwidth)) %>%  
-    dplyr::mutate(density_Manta_ray = 250000 * n_Manta_ray / (length*footprintwidth)) %>%
-    dplyr::mutate(density_Dolphin = 250000 * n_Dolphin / (length*footprintwidth)) %>%  
-    dplyr::mutate(density_Shark = 250000 * n_Shark / (length*footprintwidth)) %>%  
+    dplyr::mutate(density_Turtle = 10000 * n_Turtle / (length*footprintwidth)) %>%  #density converted from ind/m2 to in indiv / 10000m2 (=0.1 km2 or 100m x 100m)
+    dplyr::mutate(density_Dugong_certain_probable = 10000 * n_Dugong_certain_probable / (length*footprintwidth)) %>%  
+    dplyr::mutate(density_Round_ray = 10000 * n_Round_ray / (length*footprintwidth)) %>% 
+    dplyr::mutate(density_Eagle_ray = 10000 * n_Eagle_ray / (length*footprintwidth)) %>%  
+    dplyr::mutate(density_Manta_ray = 10000 * n_Manta_ray / (length*footprintwidth)) %>%
+    dplyr::mutate(density_Dolphin = 10000 * n_Dolphin / (length*footprintwidth)) %>%  
+    dplyr::mutate(density_Shark = 10000 * n_Shark / (length*footprintwidth)) %>%  
     
     #clean
     dplyr::select(-tidyselect::starts_with("density_length")) %>%

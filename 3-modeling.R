@@ -22,6 +22,7 @@ percent_reef_slope = raster::raster(here::here("data", "processed_data", "predic
 percent_shallow_lagoon = raster::raster(here::here("data", "processed_data", "predictors", "percent_shallow_lagoon.grd"))
 percent_terrestrial_reef_flat = raster::raster(here::here("data", "processed_data", "predictors", "percent_terrestrial_reef_flat.grd"))
 
+turbidity = raster::raster(here::here("data", "processed_data", "predictors", "turbidity.grd")) #better than population and pop_desnity to express human impacts
 travel_time = raster::raster(here::here("data", "processed_data", "predictors", "travel_time.grd"))
 population = raster::raster(here::here("data", "processed_data", "predictors", "population.grd")) #unsure
 pop_density = raster::raster(here::here("data", "processed_data", "predictors", "pop_density.grd")) #unsure
@@ -30,7 +31,10 @@ mpa_type_no_take_only = raster::raster(here::here("data", "processed_data", "pre
 mpa_pres = raster::raster(here::here("data", "processed_data", "predictors", "mpa_pres.grd")) #1 = mpa presence / 0 = absence
 dist_land = raster::raster(here::here("data", "processed_data", "predictors", "dist_land.grd"))
 dist_reef = raster::raster(here::here("data", "processed_data", "predictors", "dist_reef.grd"))
- 
+depth = raster::raster(here::here("data", "processed_data", "predictors", "depth.grd"))
+dist_seagrass = raster::raster(here::here("data", "processed_data", "predictors", "dist_seagrass.grd"))
+
+
 
 
 #read dugong raster
@@ -38,12 +42,11 @@ density_dugong = raster::raster(here::here("data", "processed_data", "density", 
 
 
 #stack all rasters
-r = raster::stack(density_dugong, percent_rubble, percent_coral_algae, percent_microalgal_mats, percent_seagrass,
-                  percent_sand, percent_rock, 
+r = raster::stack(density_dugong, percent_rubble, percent_coral_algae, percent_microalgal_mats, percent_seagrass, percent_sand, percent_rock, 
                   percent_back_reef_slope, percent_deep_lagoon, percent_inner_reef_flat, percent_outer_reef_flat, 
                   percent_plateau, percent_reef_crest, percent_reef_slope, percent_shallow_lagoon, percent_terrestrial_reef_flat,
-                  travel_time, population, pop_density, mpa_type, mpa_type_no_take_only,
-                  mpa_pres, dist_land, dist_reef)
+                  turbidity, travel_time, population, pop_density, mpa_type, mpa_type_no_take_only,
+                  mpa_pres, dist_land, dist_reef, depth, dist_seagrass)
 
 
 #mask with dugong raster
