@@ -271,8 +271,7 @@ assign_zeros_where_absent_type <- function(cor, r, rastxy){
 
 
 
-
-#' assign zeros where habitat/geomorpho type is absent using travel time raster as mask ***todo replace traveltime raster by raster derived from allen polygons - see untitled 2
+#' assign zeros where habitat/geomorpho type is absent using coral cover raster as mask 
 #'
 #' @param cor 
 #' @param mask 
@@ -281,7 +280,10 @@ assign_zeros_where_absent_type <- function(cor, r, rastxy){
 #' @export
 #'
 
-assign_zeros_where_absent_type2 <- function(cor, mask){
+assign_zeros_where_absent_type <- function(cor, mask){
+  
+  #convert 0s to NAs
+  mask[mask == 0] <- NA
   
   #convert non na value to 0
   mask[!is.na(mask[])] = 0 
@@ -298,8 +300,8 @@ assign_zeros_where_absent_type2 <- function(cor, mask){
   return(rnew)
   
 }
-  
-  
+
+
   
 #' Load original travel time raster (in seconds) from Florian Baletaud and resample
 #'

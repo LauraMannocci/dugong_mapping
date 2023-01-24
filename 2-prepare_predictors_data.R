@@ -78,6 +78,8 @@ map_allen_coral_osm(maplatlon, coral, lon1, lon2, lat1, lat2)
 #Reproject
 coral_projected = sp::spTransform(coral, sp::CRS("+init=epsg:3163"))
 
+#create coral_cover raster to be used in assign_zeros_where_absent_type function below
+coral_cover = raster::rasterize(coral_projected, rast_xy, getCover = T)
 
 
 #setup parallel processing
@@ -120,13 +122,13 @@ percent_sand = mask_with_land(percent_sand, dist_land)
 percent_rock = mask_with_land(percent_rock, dist_land)
 
 
-# assign zeros where habitat/geomorpho type is absent using travel time raster as mask
-percent_rubble = assign_zeros_where_absent_type2(percent_rubble, travel_time) 
-percent_coral_algae = assign_zeros_where_absent_type2(percent_coral_algae, travel_time) 
-percent_microalgal_mats = assign_zeros_where_absent_type2(percent_microalgal_mats, travel_time) 
-percent_seagrass = assign_zeros_where_absent_type2(percent_seagrass, travel_time) 
-percent_sand = assign_zeros_where_absent_type2(percent_sand, travel_time) 
-percent_rock = assign_zeros_where_absent_type2(percent_rock, travel_time) 
+# assign zeros where habitat/geomorpho type is absent using coral_cover raster as mask
+percent_rubble = assign_zeros_where_absent_type(percent_rubble, coral_cover) 
+percent_coral_algae = assign_zeros_where_absent_type(percent_coral_algae, coral_cover) 
+percent_microalgal_mats = assign_zeros_where_absent_type(percent_microalgal_mats, coral_cover) 
+percent_seagrass = assign_zeros_where_absent_type(percent_seagrass, coral_cover) 
+percent_sand = assign_zeros_where_absent_type(percent_sand, coral_cover) 
+percent_rock = assign_zeros_where_absent_type(percent_rock, coral_cover) 
 
 
 #map
@@ -215,16 +217,16 @@ percent_shallow_lagoon = mask_with_land(percent_shallow_lagoon, dist_land)
 percent_terrestrial_reef_flat = mask_with_land(percent_terrestrial_reef_flat, dist_land)
 
 
-# assign zeros where habitat/geomorpho type is absent
-percent_back_reef_slope = assign_zeros_where_absent_type(percent_back_reef_slope, geom_projected, rast_xy) 
-percent_deep_lagoon = assign_zeros_where_absent_type(percent_deep_lagoon, geom_projected, rast_xy) 
-percent_inner_reef_flat = assign_zeros_where_absent_type(percent_inner_reef_flat, geom_projected, rast_xy) 
-percent_outer_reef_flat = assign_zeros_where_absent_type(percent_outer_reef_flat, geom_projected, rast_xy) 
-percent_plateau = assign_zeros_where_absent_type(percent_plateau, geom_projected, rast_xy) 
-percent_reef_crest = assign_zeros_where_absent_type(percent_reef_crest, geom_projected, rast_xy) 
-percent_reef_slope = assign_zeros_where_absent_type(percent_reef_slope, geom_projected, rast_xy) 
-percent_shallow_lagoon = assign_zeros_where_absent_type(percent_shallow_lagoon, geom_projected, rast_xy) 
-percent_terrestrial_reef_flat = assign_zeros_where_absent_type(percent_terrestrial_reef_flat, geom_projected, rast_xy) 
+# assign zeros where habitat/geomorpho type is absent based on coral_cover raster
+percent_back_reef_slope = assign_zeros_where_absent_type(percent_back_reef_slope, coral_cover) 
+percent_deep_lagoon = assign_zeros_where_absent_type(percent_deep_lagoon, coral_cover) 
+percent_inner_reef_flat = assign_zeros_where_absent_type(percent_inner_reef_flat, coral_cover) 
+percent_outer_reef_flat = assign_zeros_where_absent_type(percent_outer_reef_flat, coral_cover) 
+percent_plateau = assign_zeros_where_absent_type(percent_plateau, coral_cover) 
+percent_reef_crest = assign_zeros_where_absent_type(percent_reef_crest, coral_cover) 
+percent_reef_slope = assign_zeros_where_absent_type(percent_reef_slope, coral_cover) 
+percent_shallow_lagoon = assign_zeros_where_absent_type(percent_shallow_lagoon, coral_cover) 
+percent_terrestrial_reef_flat = assign_zeros_where_absent_type(percent_terrestrial_reef_flat, coral_cover) 
 
   
 
@@ -358,7 +360,7 @@ raster::writeRaster(mpa_type, here::here("data", "processed_data", "predictors",
 
 # Make mpa type raster no-take only (for msp)
 library(raster) #for good functionning of levels in function
-mpa_type_no_take_only = make_mpa_type_raster_no_take_only(rast_latlon) #ran outside function to avoi dbug
+mpa_type_no_take_only = make_mpa_type_raster_no_take_only(rast_xy) #ran outside function to avoi dbug
 
 # mask based on dist to mainland raster
 mpa_type_no_take_only = mask_with_land(mpa_type_no_take_only, dist_land)

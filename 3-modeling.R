@@ -52,6 +52,52 @@ r = raster::stack(density_dugong, percent_rubble, percent_coral_algae, percent_m
 #mask with dugong raster
 r = raster::mask(r, density_dugong)
 
-save(r, file = here::here("3-modeling.RData"))
+#save(r, file = here::here("3-modeling.RData"))
 
 
+
+
+
+#Modelling framework
+data_model = r %>% 
+  raster::as.data.frame(xy = T)
+
+#CHECK CORRELATED VARIABLES
+#Correlarogram
+data_corr = data_model %>%
+  dplyr::select_if(is.double) %>% 
+  dplyr::select(-c(x, y)) %>% 
+  tidyr::drop_na()
+
+M <- cor(data_corr)
+
+corrplot::corrplot(M, method="circle")
+corrplot::corrplot(M, method="color")
+
+#pop_dens and dist_land are very correlated, removing pop_dens
+#dist_seagrass and dist_land are very correlated, removing dist_land
+#terrestrial_reef_flat and seagrass are correlated, removing terrestrial_reef_flat
+data_model = data_model %>%
+  #removing correlated variables
+  dplyr::select(-c(pop_dens, dist_land, terrestrial_reef_flat)) %>% 
+  #Keep mpa pres as MPA variable (removing the others), removing population which is not correct and better replaced by turbidity
+  dplyr::select(-c(mpa_type_no_take_only_mpa_type, mpa_type_mpa_type, population)) %>%
+  #removing depth higher than 0 
+  dplyr::filter(!depth > 0) %>%
+  #Transforming a few variables
+  dplyr::mutate(travel_time = log10(travel_time + 1),
+                turbidity = log10(turbidity + 1),
+                depth = abs(depth),
+                depth = log10(depth + 1),
+                dist_reef = log10(dist_reef + 1)) %>% 
+  #rename
+  dplyr::rename("density" = density_Dugong_certain_probable,
+                "mpa_pres" = mpa_pres_mpa_pres)
+
+
+
+mod <- mgcv::gam(density ~  s(rubble) + s(coral_algae) + s(microalgal_mats) + s(seagrass) + s(sand) + s(rock) + s(back_reef_slope) + 
+           s(deep_lagoon) + s(inner_reef_flat) + s(outer_reef_flat) + s(plateau) + s(reef_crest) + s(reef_slope) + s(shallow_lagoon) + 
+           s(turbidity) + s(travel_time) + s(dist_reef) + s(depth) + s(dist_seagrass), data = data_model, method="REML")
+
+plot(mod, pages = 1)
