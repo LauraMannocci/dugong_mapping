@@ -812,3 +812,99 @@ map_dens_per_grid_species_with_zero <- function(maplatlonproj, polyobs, polytrac
 }
 
 
+
+
+
+#' Map abundance per grid cell for given species with zeros 
+#'
+#' @param species
+#' @param maplatlonproj
+#' @param size 
+#' @param raster_abund 
+#' @param telem 
+#'
+#' @return
+#' @export
+#'
+
+map_abundance_per_grid_species_with_zeros <- function(maplatlonproj, raster_abund, species, size){
+  
+  #convert raster to dataframe
+  dat = raster_abund %>% 
+    raster::as.data.frame(xy = T)
+  
+  # pal <- c("grey90", rev(heat.colors(6)), "dark red")
+  
+  pal = c("grey90", rev(viridis::inferno(50))[1:25])
+  
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlonproj) + ##convert OSM to ggplot2 format and add merged results
+    ggplot2::geom_point(data = dat, ggplot2::aes(x = x, y = y, color = n_Dugong_certain_probable), shape = 15, size = size, alpha = 0.9) +
+    #ggplot2::theme_minimal() +
+    #limits
+    ggplot2::xlim(maplatlonproj$bbox$p1[1], maplatlonproj$bbox$p2[1]) +
+    ggplot2::ylim(maplatlonproj$bbox$p2[2], maplatlonproj$bbox$p1[2]) +
+    ggplot2::theme(axis.title = ggplot2::element_blank(),
+                   axis.text = ggplot2::element_blank(),
+                   axis.ticks = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5, size = 18),
+                   panel.background = ggplot2::element_blank(),
+                   panel.grid.major.y = ggplot2::element_blank(),
+                   panel.grid.minor = ggplot2::element_blank(),
+                   legend.text = ggplot2::element_text(size = 11),
+                   legend.title = ggplot2::element_text(hjust = 0.5, size = 13)) +
+    ggplot2::scale_color_gradientn(colours = pal, na.value = NA, name = "Ind / 0.25 km2") 
+  # ggplot2::scale_color_gradient2(low = "grey90", mid = "pink", high = "dark red", na.value = NA,
+  #                               name = "Individuals")
+  # ggplot2::scale_color_gradient(low = "grey90", high = "dark red", breaks = c(0,5,10,25,50), na.value = NA,
+  #                                name = "Individuals")
+  # ggplot2::scale_color_manual(values = wesanderson::wes_palette("GrandBudapest1", n = 3))
+  # ggplot2::scale_color_viridis_c(na.value = NA, name = "Individuals", option = "inferno", direction = -1)
+  
+  ggplot2::ggsave(here::here(paste0("outputs/map_abundance_per_grid_", species, "_with_zero.png")), map, width = 7, height = 5)
+  
+}
+
+
+
+
+
+#' Map surveyed area per grid cell for given species with zeros 
+#'
+#' @param species
+#' @param maplatlonproj
+#' @param size 
+#' @param raster_abund 
+#' @param telem 
+#'
+#' @return
+#' @export
+#'
+
+map_surveyed_area_per_grid_species_with_zeros <- function(maplatlonproj, raster_abund, species, size){
+  
+  #convert raster to dataframe
+  dat = raster_abund %>% 
+    raster::as.data.frame(xy = T)
+  
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlonproj) + ##convert OSM to ggplot2 format and add merged results
+    ggplot2::geom_point(data = dat, ggplot2::aes(x = x, y = y, color = area_surveyed_m2), shape = 15, size = size, alpha = 0.9) +
+    #ggplot2::theme_minimal() +
+    #limits
+    ggplot2::xlim(maplatlonproj$bbox$p1[1], maplatlonproj$bbox$p2[1]) +
+    ggplot2::ylim(maplatlonproj$bbox$p2[2], maplatlonproj$bbox$p1[2]) +
+    ggplot2::theme(axis.title = ggplot2::element_blank(),
+                   axis.text = ggplot2::element_blank(),
+                   axis.ticks = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5, size = 18),
+                   panel.background = ggplot2::element_blank(),
+                   panel.grid.major.y = ggplot2::element_blank(),
+                   panel.grid.minor = ggplot2::element_blank(),
+                   legend.text = ggplot2::element_text(size = 11),
+                   legend.title = ggplot2::element_text(hjust = 0.5, size = 13)) +
+  ggplot2::scale_color_gradient(low = "grey90", high = "dark red", na.value = NA,
+                                name = "m2")
+  
+  ggplot2::ggsave(here::here(paste0("outputs/map_surveyed_area_per_grid_", species, "_with_zero.png")), map, width = 7, height = 5)
+  
+}
+

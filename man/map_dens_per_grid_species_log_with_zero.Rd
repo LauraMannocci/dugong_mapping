@@ -2,7 +2,7 @@
 % Please edit documentation in R/make_density_maps.R
 \name{map_dens_per_grid_species_log_with_zero}
 \alias{map_dens_per_grid_species_log_with_zero}
-\title{Map density per grid cell for given species (nb of observations / (length of tracks in meters * footprint_width in meters))}
+\title{Map density per grid cell for given species in LOG scale with zeros (nb of observations / (length of tracks in meters * footprint_width in meters))}
 \usage{
 map_dens_per_grid_species_log_with_zero(
   maplatlonproj,
@@ -17,5 +17,5 @@ map_dens_per_grid_species_log_with_zero(
 \item{size}{}
 }
 \description{
-Map density per grid cell for given species (nb of observations / (length of tracks in meters * footprint_width in meters))
+Map density per grid cell for given species in LOG scale with zeros (nb of observations / (length of tracks in meters * footprint_width in meters))
 }

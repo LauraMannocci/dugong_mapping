@@ -2,7 +2,7 @@
 % Please edit documentation in R/prepare_predictors.R
 \name{load_travel_time_raster}
 \alias{load_travel_time_raster}
-\title{Load original travel time raster (in seconds) from Florian Baletaud and crop}
+\title{Load original travel time raster (in seconds) from Florian Baletaud and resample}
 \usage{
 load_travel_time_raster(rast)
 }
@@ -10,5 +10,5 @@ load_travel_time_raster(rast)
 \item{rast}{}
 }
 \description{
-Load original travel time raster (in seconds) from Florian Baletaud and crop
+Load original travel time raster (in seconds) from Florian Baletaud and resample
 }

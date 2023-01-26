@@ -2,7 +2,7 @@
 % Please edit documentation in R/make_basic_maps.R
 \name{map_allen_coral_osm}
 \alias{map_allen_coral_osm}
-\title{Make map of Allen coral geomorphology polygons overlaid on osm}
+\title{Make map of Allen coral habitat polygons overlaid on osm}
 \usage{
 map_allen_coral_osm(maplatlon, cor, lon1, lon2, lat1, lat2)
 }
@@ -10,5 +10,5 @@ map_allen_coral_osm(maplatlon, cor, lon1, lon2, lat1, lat2)
 \item{lat2}{}
 }
 \description{
-Make map of Allen coral geomorphology polygons overlaid on osm
+Make map of Allen coral habitat polygons overlaid on osm
 }

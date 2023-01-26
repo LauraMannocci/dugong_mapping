@@ -11,7 +11,7 @@
 #' @export
 #'
 
-make_df_all_species <- function(polyobs, polytracks, footprintwidth){
+make_density_df_all_species <- function(polyobs, polytracks, footprintwidth){
   
   
   ### polyobs
@@ -169,3 +169,100 @@ get_density_stack_species <- function(df, species){
   return(r)
   
 }
+
+
+
+
+
+
+#' Make dataframe per grid cell centers (including empty cell centers) of abundance and surveyed area
+#'
+#' @param polyobs
+#' @param polytracks
+#' @param footprintwidth
+#'
+#' @return
+#' @export
+#'
+
+make_abundance_df <- function(polyobs, polytracks, footprintwidth){
+  
+  
+  ### polyobs
+  
+  polyobs %>% 
+    dplyr::rename(n = n_count_avail_corrected) -> polyobs
+  
+  #to avoid errors when replacing nas
+  polyobs$object = as.character(polyobs$object)
+  
+  # replace NAs
+  polyobs2 = polyobs %>%
+    dplyr::mutate(date = as.character(date)) %>%
+    tidyr::replace_na(list(n = 0, object = "unknown", date = "unknown"))
+  
+  # convert back to spatial object for plotting
+  polyobs3 = sf::as_Spatial(polyobs2)
+  
+  #add coords
+  polyobs3@data$lon = coordinates(polyobs3)[,1]
+  polyobs3@data$lat = coordinates(polyobs3)[,2]
+  
+  #reformat
+  polyobs3@data %>%
+    #replace special character
+    dplyr::mutate(date = stringr::str_replace_all(date, "-", "_")) %>%
+    #reshape
+    tidyr::pivot_wider(names_from = c(date, object), values_from = n, values_fill = 0, names_glue = "n_{object}_{date}") %>%
+    #remove columns
+    dplyr::select(c(-layer, -n_unknown_unknown)) %>%
+    #calculate tot observation nb per species
+    dplyr::mutate(n_Dugong_certain_probable = rowSums(dplyr::across(tidyselect::starts_with("n_Dugong_certain_probable")))) -> polyobs4
+  
+  
+  
+  ### polytracks
+  
+  # replace NAs
+  polytracks2 = polytracks %>%
+    dplyr::mutate(date = as.character(date)) %>%
+    dplyr::select(-layer.y, -layer.x) %>%
+    dplyr::mutate(length = as.numeric(length)) %>%
+    tidyr::replace_na(list(length = 0, date = "unknown"))
+  
+  # convert back to spatial object for plotting
+  polytracks3 = sf::as_Spatial(polytracks2)
+  
+  #add coords
+  polytracks3@data$lon = coordinates(polytracks3)[,1]
+  polytracks3@data$lat = coordinates(polytracks3)[,2]
+  
+  #reformat
+  polytracks3@data %>%
+    #replace special character
+    dplyr::mutate(date = stringr::str_replace_all(date, "-", "_")) %>%
+    #reshape
+    tidyr::pivot_wider(names_from = date, values_from = length, values_fill = 0, names_glue = "length_{date}") %>%
+    #calculate tot length
+    dplyr::mutate(length = rowSums(dplyr::across(tidyselect::starts_with("length"))))  -> polytracks4
+  
+  
+  ### join polyobs and polytracks and get abundance and surveyed area
+  
+  polyobs4 %>%
+    #join
+    dplyr::right_join(polytracks4, by = c("id"))  %>%
+    #compute area surveyed in m2    
+    dplyr::mutate(area_surveyed_m2 = length*footprintwidth )%>%  
+    #clean
+    dplyr::rename(lon = lon.x, lat = lat.x) %>%
+    dplyr::select(c(lat, lon, n_Dugong_certain_probable, area_surveyed_m2)) -> result
+  
+  
+  return(result)
+  
+}
+
+
+
+

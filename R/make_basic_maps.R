@@ -229,7 +229,7 @@ map_indiv_species_telemetry <- function(maplatlon, telem, telem_obs){
 
 
 
-#' Make map of telemetry with individual dugong observations
+#' Make map of telemetry with individual dugong observations (1 dot = 1 obs centered on image so dots can be overlaid)
 #'
 #' @param telem
 #' @param maplatlon
@@ -244,7 +244,7 @@ map_indiv_dugong_telemetry <- function(maplatlon, telem, telem_obs){
   map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
     ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, alpha = 0.5) + #telem only
     ggplot2::geom_point(data = telem_obs, ggplot2::aes(x = lon, y = lat, color = object), size = 0.2, alpha = 0.5) +
-    ggplot2::ggtitle(paste0("Dugong_certain_probable observations n = ", nrow(telem_obs))) +
+    ggplot2::ggtitle(paste0("Dugong_certain_probable - number = ", nrow(telem_obs))) +
     ggplot2::theme(legend.position="none") +
     #ggplot2::theme_minimal() +
     #limits on x and y axes
@@ -260,7 +260,44 @@ map_indiv_dugong_telemetry <- function(maplatlon, telem, telem_obs){
 
 
 
-#' Make map of telemetry with individual dugong observations differenciating stage (adult vs juvenile)
+
+
+#' Make map of telemetry with individual dugong observations per image
+#'
+#' @param telem
+#' @param maplatlon
+#' @param telem_obs
+#'
+#' @return
+#' @export
+#'
+
+map_indiv_dugong_per_image_telemetry <- function(maplatlon, telem, telem_obs){
+  
+  #calculate group size per image
+  telem_obs %>% 
+    dplyr::group_by(image_id, lat, lon) %>% 
+    dplyr::summarise(n = dplyr::n()) -> telem_obs
+  
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
+    ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, alpha = 0.5) + #telem only
+    ggplot2::geom_point(data = telem_obs, ggplot2::aes(x = lon, y = lat, size = n), color = "pink", alpha = 0.5) +
+    ggplot2::ggtitle("Dugong_certain_probable - number per image") +
+    ggplot2::scale_size_continuous(limits = c(1, ceiling(max(telem_obs$n)/ 10) * 10)) +
+    #ggplot2::theme_minimal() +
+    #limits on x and y axes
+    ggplot2::xlim(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1]) +
+    ggplot2::ylim(maplatlon$bbox$p2[2], maplatlon$bbox$p1[2]) +
+    ggplot2::theme(axis.title = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5))
+  
+  ggplot2::ggsave(here::here("outputs/map_indiv_dugong_per_image_telemetry.png"), map, width = 7, height = 5)
+  
+}
+
+
+
+#' Make map of telemetry with individual dugong observations differenciating stage (adult vs juvenile)  (1 dot = 1 obs centered on images so dots can be overlaid)
 #'
 #' @param telem
 #' @param maplatlon
@@ -272,12 +309,12 @@ map_indiv_dugong_telemetry <- function(maplatlon, telem, telem_obs){
 
 map_indiv_dugong_stage_telemetry <- function(maplatlon, telem, telem_obs){
   
-  labels <- c("adult" = paste0("adults n=", nrow(telem_obs[telem_obs$stage=="adult",])),
-              "juvenile" = paste0("juveniles n=", nrow(telem_obs[telem_obs$stage=="juvenile",])))
+  labels <- c("adult" = paste0("adults number=", nrow(telem_obs[telem_obs$stage=="adult",])),
+              "juvenile" = paste0("juveniles number=", nrow(telem_obs[telem_obs$stage=="juvenile",])))
                                        
   map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
     ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, alpha = 0.5) + #telem only
-    ggplot2::geom_point(data = telem_obs, ggplot2::aes(x = lon, y = lat, color = object), size = 0.2, alpha = 0.5) + 
+    ggplot2::geom_point(data = telem_obs, ggplot2::aes(x = lon, y = lat, color = object), size = 0.2, alpha = 0.5) +
     ggplot2::facet_wrap(~stage, nrow = 2, labeller = ggplot2::as_labeller(labels)) + #facet per stage
     ggplot2::theme(legend.position="none") +
     #ggplot2::theme_minimal() +
@@ -291,6 +328,44 @@ map_indiv_dugong_stage_telemetry <- function(maplatlon, telem, telem_obs){
   
 }
 
+
+
+
+
+#' Make map of telemetry with individual dugong observations per image differenciating stage (adult vs juvenile)  
+#'
+#' @param telem
+#' @param maplatlon
+#' @param telem_obs
+#'
+#' @return
+#' @export
+#'
+
+map_indiv_dugong_per_image_stage_telemetry <- function(maplatlon, telem, telem_obs){
+  
+  #calculate group size per image
+  telem_obs %>% 
+    dplyr::group_by(image_id, lat, lon, stage) %>% 
+    dplyr::summarise(n = dplyr::n()) -> telem_obs
+  
+  labels <- c("adult" = "adults per image",
+              "juvenile" = "juveniles per image")
+  
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
+    ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, alpha = 0.5) + #telem only
+    ggplot2::geom_point(data = telem_obs, ggplot2::aes(x = lon, y = lat, size = n), color = "pink", alpha = 0.5) +
+    ggplot2::facet_wrap(~stage, nrow = 2, labeller = ggplot2::as_labeller(labels)) + #facet per stage
+    #ggplot2::theme_minimal() +
+    #limits on x and y axes
+    ggplot2::xlim(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1]) +
+    ggplot2::ylim(maplatlon$bbox$p2[2], maplatlon$bbox$p1[2]) +
+    ggplot2::theme(axis.title = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5))
+  
+  ggplot2::ggsave(here::here("outputs/map_indiv_dugong_per_image_stage_telemetry.png"), map, width = 7, height = 5)
+  
+}
 
 
 

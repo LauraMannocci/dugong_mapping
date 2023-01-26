@@ -74,10 +74,10 @@ telemetry = select_telemetry_wcoast(telemetry, ls_videos)
 #select dugong observations
 telemetry_obs = subset(telemetry, telemetry$object == "Dugong_certain_probable" )
 
-#count total number of individuals observed per species
+#count total number of individuals observed 
 telemetry_obs %>%
   dplyr::group_by(object) %>%
-  dplyr::summarise(n_tot = dplyr::n())
+  dplyr::summarise(n_tot = dplyr::n()) #1949
 
 
 
@@ -143,7 +143,7 @@ telemetry_obs_on_dupl_flag = xlsx::read.xlsx(here::here("data", "processed_data"
 
 #remove duplicate observations
 telemetry_obs_on_dupl_rm = subset(telemetry_obs_on_dupl_flag, telemetry_obs_on_dupl_flag$duplicate == "no")
-dim(telemetry_obs_on_dupl_rm) #162 unique observations
+nrow(telemetry_obs_on_dupl_rm) #162 unique observations
 table(telemetry_obs_on_dupl_rm$stage) # 139 adults 23 juveniles
 
 #correct number of observations for availability bias following Hagihara et al 2016
@@ -158,6 +158,8 @@ telemetry_obs_on_dupl_rm_avail_cor = telemetry_obs_on_dupl_rm %>%
                                                            eci == 3 ~ 1 / 0.825,
                                                            eci == 4 ~ 1 / 0.39))  
 telemetry_obs_on = telemetry_obs_on_dupl_rm_avail_cor
+sum(telemetry_obs_on$n_count_avail_corrected) #corrected abundance
+nrow(telemetry_obs_on) #uncorrected abundance
 
 ############################################ MAKE BASIC MAPS ON EFFORT #############################################################
 
@@ -178,11 +180,19 @@ map_telemetry_date_separate(maplatlon, telemetry_on)
 
 
 
-####### telemetry with individual dugong observations (1 dot = 1 obs ; dots can be clustered)
+####### telemetry with individual dugong observations  (1 dot = 1 obs centered on image so dots can be overlaid)
 map_indiv_dugong_telemetry(maplatlon, telemetry_on, telemetry_obs_on)
 
-####### telemetry with individual dugong observations differenciating stage (1 dot = 1 obs ; dots can be clustered)
+####### telemetry with individual dugong observations differenciating stage  (1 dot = 1 obs centered on image so dots can be overlaid)
 map_indiv_dugong_stage_telemetry(maplatlon, telemetry_on, telemetry_obs_on)
+
+
+####### telemetry with individual dugong observations per image (obs summed per image)
+map_indiv_dugong_per_image_telemetry(maplatlon, telemetry_on, telemetry_obs_on)
+
+####### telemetry with individual dugong observations per image (obs summed per image)
+map_indiv_dugong_per_image_stage_telemetry(maplatlon, telemetry_on, telemetry_obs_on)
+
 
 
 ###### telemetry and transects lines
@@ -302,11 +312,11 @@ map_dens_per_grid_species_with_zero(maplatlon_proj, grid_obs_per_date, grid_trac
 
 
 
-############################################ CREATE DENSITY RASTERS #############################################################
+############################################ CREATE DENSITY RASTER #############################################################
 
 
 #Make dataframe per grid cell centers (including empty cell centers) of observations, track length and densities per date and per species 
-df_all_species = make_df_all_species(grid_obs_per_date, grid_tracks_per_date, footprint_width) #desnity in indiv / 10000m2 (=0.1 km2 or 100m x 100m)
+df_all_species = make_density_df_all_species(grid_obs_per_date, grid_tracks_per_date, footprint_width) #density in indiv / 10000m2 (=0.1 km2 or 100m x 100m)
 
 #get raster stack of density for given species
 r_density_dugong = get_density_stack_species(df_all_species, "Dugong_certain_probable")
@@ -317,3 +327,30 @@ r_density_dugong = extend_raster(r_density_dugong, rast_xy)
 #write
 raster::writeRaster(r_density_dugong[[7]], here::here("data", "processed_data", "density", "dugong_density.grd"), overwrite=TRUE)
 
+
+
+
+############################################ CREATE ABUNDANCE AND SURVEYED AREA RASTER #############################################################
+
+#Make dataframe per grid cell centers (including empty cell centers) of abundance and surveyed area
+df_abundance_dugong = make_abundance_df(grid_obs_per_date, grid_tracks_per_date, footprint_width) 
+
+#convert to stack
+r_abundance_dugong <- raster::stack()
+r_abundance_dugong = raster::stack(r_abundance_dugong, raster::rasterFromXYZ(df_abundance[,c("lon", "lat", "n_Dugong_certain_probable", "area_surveyed_m2")],  crs="+init=epsg:3163"))
+
+#map abundance
+map_abundance_per_grid_species_with_zeros(maplatlon_proj, r_abundance_dugong[[1]], "Dugong_certain_probable", 0.5)
+
+#map surveyed area
+map_surveyed_area_per_grid_species_with_zeros(maplatlon_proj, r_abundance_dugong[[2]], "Dugong_certain_probable", 0.5)
+
+#extend raster to study area raster
+r_abundance_dugong = extend_raster(r_abundance_dugong, rast_xy)
+
+#write abundance and surveyed area rasters
+raster::writeRaster(r_abundance_dugong[[1]], here::here("data", "processed_data", "abundance", "dugong_abundance.grd"), overwrite=TRUE)
+raster::writeRaster(r_abundance_dugong[[2]], here::here("data", "processed_data", "abundance", "area_surveyed.grd"), overwrite=TRUE)
+
+
+############################################ MAKE ABUNDANCE AND SURVEYED AREA MAPS #############################################################
