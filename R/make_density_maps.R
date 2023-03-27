@@ -544,13 +544,16 @@ map_obs_per_grid_species_with_zero <- function(maplatlonproj, polygon, polytrack
     ggplot2::geom_point(data = effort2, ggplot2::aes(x = lon, y = lat), color = "white", shape = 15, size = size, alpha = 0.4) +
     ggplot2::geom_point(data = counts2, ggplot2::aes(x = lon, y = lat, color = tot_count), shape = 15, size = size, alpha = 1) +
     #ggplot2::theme_minimal() +
-    ggplot2::ggtitle(species) +
+    # ggplot2::ggtitle(species) +
     ggplot2::theme(axis.title = ggplot2::element_blank(),
                    axis.text = ggplot2::element_blank(),
                    axis.ticks = ggplot2::element_blank(),
-                   plot.title = ggplot2::element_text(hjust = 0.5)) +
+                   legend.justification = "left",
+                   legend.box.spacing = grid::unit(0, "pt"),
+                   panel.background = ggplot2::element_blank()) +
     ggplot2::scale_color_gradient(low = "bisque1", high = "red3", na.value = NA,
-                                  name = "individuals")
+                                  # name = stringr::str_wrap("Dugong / 0.25 km2", width = 10))
+                                  name = 'Dugongs')
   
   ggplot2::ggsave(here::here(paste0("outputs/map_obs_per_grid_", species, "_with_zero.png")), map, width = 7, height = 5)
   
@@ -889,20 +892,19 @@ map_surveyed_area_per_grid_species_with_zeros <- function(maplatlonproj, raster_
   map = OpenStreetMap::autoplot.OpenStreetMap(maplatlonproj) + ##convert OSM to ggplot2 format and add merged results
     ggplot2::geom_point(data = dat, ggplot2::aes(x = x, y = y, color = area_surveyed_m2), shape = 15, size = size, alpha = 0.9) +
     #ggplot2::theme_minimal() +
-    #limits
-    ggplot2::xlim(maplatlonproj$bbox$p1[1], maplatlonproj$bbox$p2[1]) +
-    ggplot2::ylim(maplatlonproj$bbox$p2[2], maplatlonproj$bbox$p1[2]) +
     ggplot2::theme(axis.title = ggplot2::element_blank(),
                    axis.text = ggplot2::element_blank(),
                    axis.ticks = ggplot2::element_blank(),
+                   legend.justification = "left",
+                   legend.box.spacing = grid::unit(0, "pt"),
                    plot.title = ggplot2::element_text(hjust = 0.5, size = 18),
                    panel.background = ggplot2::element_blank(),
                    panel.grid.major.y = ggplot2::element_blank(),
                    panel.grid.minor = ggplot2::element_blank(),
                    legend.text = ggplot2::element_text(size = 11),
                    legend.title = ggplot2::element_text(hjust = 0.5, size = 13)) +
-  ggplot2::scale_color_gradient(low = "grey90", high = "dark red", na.value = NA,
-                                name = "m2")
+  ggplot2::scale_color_gradient(low = "bisque1", high = "red3", na.value = NA,
+                                name = bquote('m'^2))
   
   ggplot2::ggsave(here::here(paste0("outputs/map_surveyed_area_per_grid_", species, "_with_zero.png")), map, width = 7, height = 5)
   

@@ -160,7 +160,7 @@ make_raster_coral_benthic_type <- function(cor, r_xy, hab_type){
 make_dist_to_seagrass_raster <- function(cor, raster){
   
   # Extract polygon of seagrass from coral shapefil
-  seagrass <- coral[coral@data$class ==  "Seagrass", ]
+  seagrass <- cor[cor@data$class ==  "Seagrass", ]
   
   #project
   seagrass = sp::spTransform(seagrass, sp::CRS("+init=epsg:3163")) #project to lambert NC
@@ -168,7 +168,7 @@ make_dist_to_seagrass_raster <- function(cor, raster){
   # Calculate distance of raster cells to seagrass 
   cat('calculating distance \n')
   pts = as(raster, "SpatialPoints")
-  length(pts)
+  #length(pts)
   dd = rgeos::gDistance(seagrass, pts, byid=TRUE)
   # This creates a matrix with a column for each feature in seagrass
   
@@ -768,6 +768,60 @@ make_mpa_type_raster_no_take_only <- function(raster){
   
 }
 
+
+
+#' Make MPA type raster no-take only poe / ile verte (in surveyed block)
+#'
+#' @param raster
+#'
+#' @return
+#' @export
+#'
+
+make_mpa_type_raster_no_take_only_poe_ile_verte <- function(raster){
+  
+  # Read 3 shapefiles of new caledonia mpas
+  shp0 <- rgdal::readOGR(dsn = here::here("data", "raw_data", "mpas", "shp_0", "WDPA_WDOECM_Mar2021_Public_NCL_shp-polygons.shp"))
+  shp1 <- rgdal::readOGR(dsn = here::here("data", "raw_data", "mpas", "shp_1", "WDPA_WDOECM_Mar2021_Public_NCL_shp-polygons.shp"))
+  shp2 <- rgdal::readOGR(dsn = here::here("data", "raw_data", "mpas", "shp_2", "WDPA_WDOECM_Mar2021_Public_NCL_shp-polygons.shp"))
+  
+  # Merge
+  shp = rbind(shp0, shp1, shp2)
+  
+  # Extract polygon of marine mpas
+  shpmarine = shp[shp@data$MARINE !=  0, ]
+  
+  # Remove remaining non marine parks + all partial reserves
+  shpmarine = shpmarine[shpmarine@data$NAME %in%  c("PoÃ©", "ÃŽle Verte"), ]
+  
+  # Regroup reserve designation factor
+  shpmarine$reserve_status = "no-take reserve"
+  shpmarine$reserve_status = as.factor(shpmarine$reserve_status)
+  shpmarine$NAME = as.factor(shpmarine$NAME)
+  
+  # check plot
+  print(sp::spplot(shpmarine,  c("reserve_status"), col.regions= sp::bpy.colors(length(levels(shpmarine$reserve_status)))))
+  print(sp::spplot(shpmarine,  c("NAME"), col.regions= sp::bpy.colors(length(levels(shpmarine$NAME)))))
+  
+  #project
+  shpmarine2 = sp::spTransform(shpmarine, sp::CRS("+init=epsg:3163")) #project to lambert NC
+  
+  # rasterize
+  # For polygons, values are transferred if the polygon covers the center of a raster cell.
+  r = raster::rasterize(shpmarine2, raster, field = "reserve_status", fun = "first", background = -1)
+  
+  # convert raster values to factors (error when raster:: removed)
+  rr <- ratify(r)
+  rat <- levels(rr)[[1]]
+  rat$mpa_type <-  c("no reserve", levels(shpmarine$reserve_status))
+  levels(rr) <- rat
+  
+  # names
+  names(rr) = "mpa_type_no_take_only"
+  
+  return(rr)
+  
+}
 
 
 

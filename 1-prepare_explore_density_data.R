@@ -83,10 +83,6 @@ telemetry_obs %>%
 
 
 
-
-
-
-
 ######################################## READ TRANSECT DATA ########################################
 
 #read transect pts
@@ -125,6 +121,18 @@ off_effort_loop = clean_off_effort_loop_wcoast(off_effort)
 telemetry_on = select_on_effort_wcoast(telemetry, off_effort_transit, off_effort_loop)
 telemetry_obs_on = select_on_effort_wcoast(telemetry_obs, off_effort_transit, off_effort_loop)
 
+#total on effort images
+nrow(telemetry_on) #109429 images
+
+#number of images countaining dugongs
+telemetry_on %>% 
+  dplyr::filter(object == "Dugong_certain_probable") %>% 
+  dplyr::distinct(image_id) -> distinct
+
+nrow(distinct) #304
+
+
+
 
 ###################################### REMOVE DUPLICATED DUGONG OBSERVATIONS #####################################
 
@@ -134,7 +142,7 @@ telemetry_obs_on = select_on_effort_wcoast(telemetry_obs, off_effort_transit, of
 xlsx::write.xlsx(telemetry_obs_on, here::here("data", "processed_data", "density", "obs_with_duplicates.xlsx"))
 
 #outside of R: copy this xlsx file, rename it to obs_duplicates_flagged.xlsx and 
-#fill out new column "duplicate" (yes/no) by looking at each observation in megafauna-project
+#fill out new column "duplicate" (yes/no) by looking at each observation in the custom annotation applicaion
 #also fill out column "stage" (adult/juvenile)
 #also fill out column "eci" (1/2/3/4 ie Environmental Conditions Index following Hagihara et al 2016)
 
@@ -145,6 +153,7 @@ telemetry_obs_on_dupl_flag = xlsx::read.xlsx(here::here("data", "processed_data"
 telemetry_obs_on_dupl_rm = subset(telemetry_obs_on_dupl_flag, telemetry_obs_on_dupl_flag$duplicate == "no")
 nrow(telemetry_obs_on_dupl_rm) #162 unique observations
 table(telemetry_obs_on_dupl_rm$stage) # 139 adults 23 juveniles
+
 
 #correct number of observations for availability bias following Hagihara et al 2016
 #proba of availability for New Caledonia (hour 8:00-16:00, depth <5 and 5-20 averaged)
@@ -161,12 +170,18 @@ telemetry_obs_on = telemetry_obs_on_dupl_rm_avail_cor
 sum(telemetry_obs_on$n_count_avail_corrected) #corrected abundance
 nrow(telemetry_obs_on) #uncorrected abundance
 
+#number of images countaining dugongs
+telemetry_obs_on %>% 
+  # dplyr::group_by(image_id) %>% 
+  dplyr::distinct(image_id) -> distinct
+
+nrow(distinct) #59
+
 ############################################ MAKE BASIC MAPS ON EFFORT #############################################################
 
 
 #open street map
 maplatlon = osm_map(lat1, lon1, lat2, lon2)
-
 
 
 ###### telemetry only
@@ -179,13 +194,12 @@ map_telemetry_date(maplatlon, telemetry_on)
 map_telemetry_date_separate(maplatlon, telemetry_on)
 
 
-
-####### telemetry with individual dugong observations  (1 dot = 1 obs centered on image so dots can be overlaid)
+#NB the 4 below maps are nb of indiv ***uncorrected for avail bias*** 
+####### telemetry with individual dugong observations (1 dot = 1 obs centered on image so dots can be overlaid)
 map_indiv_dugong_telemetry(maplatlon, telemetry_on, telemetry_obs_on)
 
 ####### telemetry with individual dugong observations differenciating stage  (1 dot = 1 obs centered on image so dots can be overlaid)
 map_indiv_dugong_stage_telemetry(maplatlon, telemetry_on, telemetry_obs_on)
-
 
 ####### telemetry with individual dugong observations per image (obs summed per image)
 map_indiv_dugong_per_image_telemetry(maplatlon, telemetry_on, telemetry_obs_on)
@@ -199,8 +213,22 @@ map_indiv_dugong_per_image_stage_telemetry(maplatlon, telemetry_on, telemetry_ob
 map_telemetry_transects(maplatlon, telemetry_on, lines)
 
 
+###### surveyed transects 
+lines_surveyed <- subset(lines, ! lines$id %in% c( "2_33","2_35","2_36", "2_37" ,"2_38", "3_49", "3_50", "3_51" ,"3_52" ,"3_53"))
+map_transects(maplatlon, lines_surveyed)
 
 
+###### surveyed transects with mpas
+lines_surveyed <- subset(lines, lines$id %in% c(paste0("3_", 1:48), paste0("1_", 1:24), paste0("2_", 1:33)))
+mpas <- read_mpanc()
+mpas2 <- extract_mpas(mpas)
+#extracted mpas
+map_transects_mpas(maplatlon, lines_surveyed, mpas2)
+#no take only
+mpas_notake <- extract_notake_mpas(mpas)
+map_transects_notake_mpas(maplatlon, lines_surveyed, mpas_notake)
+#big mpas only (run outside function)
+map_new_caledonia_big_mpas(mpas)
 
 ############################################ MAKE DENSITY MAPS ON REGULAR GRID ON EFFORT #############################################################
 
@@ -337,7 +365,7 @@ df_abundance_dugong = make_abundance_df(grid_obs_per_date, grid_tracks_per_date,
 
 #convert to stack
 r_abundance_dugong <- raster::stack()
-r_abundance_dugong = raster::stack(r_abundance_dugong, raster::rasterFromXYZ(df_abundance[,c("lon", "lat", "n_Dugong_certain_probable", "area_surveyed_m2")],  crs="+init=epsg:3163"))
+r_abundance_dugong = raster::stack(r_abundance_dugong, raster::rasterFromXYZ(df_abundance_dugong[,c("lon", "lat", "n_Dugong_certain_probable", "area_surveyed_m2")],  crs="+init=epsg:3163"))
 
 #map abundance
 map_abundance_per_grid_species_with_zeros(maplatlon_proj, r_abundance_dugong[[1]], "Dugong_certain_probable", 0.5)

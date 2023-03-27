@@ -154,8 +154,11 @@ map_telemetry <- function(maplatlon, telem){
 
 map_telemetry_date <- function(maplatlon, telem){
   
+  cols = c("2021-06-04" = "dark blue", "2021-06-05" = "light blue", "2021-06-16" = "orange", "2021-06-21" = "red", "2021-06-22" = "green", "2021-07-29" = "brown", "2021-08-04" = "purple")
+    
   map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
-    ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat, color = date), size = 0.01, alpha = 0.5) +
+    ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat, color = date), size = 0.01, alpha = 0.4) +
+    ggplot2::scale_color_manual(values = cols) +
     #ggplot2::theme_minimal() +
     #limits on x and y axes
     ggplot2::xlim(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1]) +
@@ -180,9 +183,13 @@ map_telemetry_date <- function(maplatlon, telem){
 
 map_telemetry_date_separate <- function(maplatlon, telem){
   
+  
+  cols = c("2021-06-04" = "dark blue", "2021-06-05" = "light blue", "2021-06-16" = "orange", "2021-06-21" = "red", "2021-06-22" = "green", "2021-07-29" = "brown", "2021-08-04" = "purple")
+  
   map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
-    ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.005, alpha = 0.5, col="white") +
+    ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat, color = date), size = 0.005, alpha = 0.5) +
     ggplot2::facet_wrap(~date, nrow = 2) + #facet per date
+    ggplot2::scale_color_manual(values = cols) +
     #ggplot2::theme_minimal() +
     #limits on x and y axes
     ggplot2::xlim(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1]) +
@@ -229,6 +236,10 @@ map_indiv_species_telemetry <- function(maplatlon, telem, telem_obs){
 
 
 
+
+
+
+
 #' Make map of telemetry with individual dugong observations (1 dot = 1 obs centered on image so dots can be overlaid)
 #'
 #' @param telem
@@ -262,42 +273,13 @@ map_indiv_dugong_telemetry <- function(maplatlon, telem, telem_obs){
 
 
 
-#' Make map of telemetry with individual dugong observations per image
-#'
-#' @param telem
-#' @param maplatlon
-#' @param telem_obs
-#'
-#' @return
-#' @export
-#'
-
-map_indiv_dugong_per_image_telemetry <- function(maplatlon, telem, telem_obs){
-  
-  #calculate group size per image
-  telem_obs %>% 
-    dplyr::group_by(image_id, lat, lon) %>% 
-    dplyr::summarise(n = dplyr::n()) -> telem_obs
-  
-  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
-    ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, alpha = 0.5) + #telem only
-    ggplot2::geom_point(data = telem_obs, ggplot2::aes(x = lon, y = lat, size = n), color = "pink", alpha = 0.5) +
-    ggplot2::ggtitle("Dugong_certain_probable - number per image") +
-    ggplot2::scale_size_continuous(limits = c(1, ceiling(max(telem_obs$n)/ 10) * 10)) +
-    #ggplot2::theme_minimal() +
-    #limits on x and y axes
-    ggplot2::xlim(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1]) +
-    ggplot2::ylim(maplatlon$bbox$p2[2], maplatlon$bbox$p1[2]) +
-    ggplot2::theme(axis.title = ggplot2::element_blank(),
-                   plot.title = ggplot2::element_text(hjust = 0.5))
-  
-  ggplot2::ggsave(here::here("outputs/map_indiv_dugong_per_image_telemetry.png"), map, width = 7, height = 5)
-  
-}
 
 
 
-#' Make map of telemetry with individual dugong observations differenciating stage (adult vs juvenile)  (1 dot = 1 obs centered on images so dots can be overlaid)
+
+
+
+#' Make map of telemetry with individual dugong observations  (1 dot = 1 obs centered on images so dots can be overlaid)
 #'
 #' @param telem
 #' @param maplatlon
@@ -330,8 +312,6 @@ map_indiv_dugong_stage_telemetry <- function(maplatlon, telem, telem_obs){
 
 
 
-
-
 #' Make map of telemetry with individual dugong observations per image differenciating stage (adult vs juvenile)  
 #'
 #' @param telem
@@ -344,28 +324,69 @@ map_indiv_dugong_stage_telemetry <- function(maplatlon, telem, telem_obs){
 
 map_indiv_dugong_per_image_stage_telemetry <- function(maplatlon, telem, telem_obs){
   
-  #calculate group size per image
+  #calculate group size per image (uncorrected by avail bias because all rows summed)
   telem_obs %>% 
     dplyr::group_by(image_id, lat, lon, stage) %>% 
-    dplyr::summarise(n = dplyr::n()) -> telem_obs
+    dplyr::summarise(Dugongs = dplyr::n()) -> telem_obs
   
   labels <- c("adult" = "adults per image",
               "juvenile" = "juveniles per image")
   
   map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
-    ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, alpha = 0.5) + #telem only
-    ggplot2::geom_point(data = telem_obs, ggplot2::aes(x = lon, y = lat, size = n), color = "pink", alpha = 0.5) +
+    ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, color = "white", alpha = 0.01) + #telem only
+    ggplot2::geom_point(data = telem_obs, ggplot2::aes(x = lon, y = lat, size = Dugongs), color = "pink", alpha = 0.7) +
     ggplot2::facet_wrap(~stage, nrow = 2, labeller = ggplot2::as_labeller(labels)) + #facet per stage
     #ggplot2::theme_minimal() +
     #limits on x and y axes
     ggplot2::xlim(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1]) +
     ggplot2::ylim(maplatlon$bbox$p2[2], maplatlon$bbox$p1[2]) +
-    ggplot2::theme(axis.title = ggplot2::element_blank(),
-                   plot.title = ggplot2::element_text(hjust = 0.5))
+    ggplot2::ylab("Latitude") +
+    ggplot2::xlab("Longitude") +
+    ggplot2::theme(panel.background = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5)) +
+    ggplot2::theme_light()
   
   ggplot2::ggsave(here::here("outputs/map_indiv_dugong_per_image_stage_telemetry.png"), map, width = 7, height = 5)
   
 }
+
+
+
+#' Make map of telemetry with individual dugong observations per image 
+#'
+#' @param telem
+#' @param maplatlon
+#' @param telem_obs
+#'
+#' @return
+#' @export
+#'
+
+map_indiv_dugong_per_image_telemetry <- function(maplatlon, telem, telem_obs){
+  
+  #calculate group size per image (uncorrected by avail bias because all rows summed)
+  telem_obs %>% 
+    dplyr::group_by(image_id, lat, lon, stage) %>% 
+    dplyr::summarise(Dugongs = dplyr::n()) -> telem_obs
+  
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
+    ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, col = "white", alpha = 0.01) + #telem only
+    ggplot2::geom_point(data = telem_obs, ggplot2::aes(x = lon, y = lat, size = Dugongs), color = "pink", alpha = 0.7) +
+    #ggplot2::theme_minimal() +
+    #limits on x and y axes
+    ggplot2::xlim(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1]) +
+    ggplot2::ylim(maplatlon$bbox$p2[2], maplatlon$bbox$p1[2]) +
+    ggplot2::ylab("Latitude") +
+    ggplot2::xlab("Longitude") +
+    ggplot2::theme(panel.background = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5)) +
+    ggplot2::theme_light()
+  
+  ggplot2::ggsave(here::here("outputs/map_indiv_dugong_per_image_telemetry.png"), map, width = 7, height = 5)
+  
+}
+
+
 
 
 
@@ -459,3 +480,170 @@ map_telemetry_transects <- function(maplatlon, telem, transects){
 }
 
 
+
+
+
+
+#' Make map of selected transect lines
+#'
+#' @param telem
+#' @param maplatlon
+#' @param transects
+#'
+#' @return
+#' @export
+#'
+
+map_transects <- function(maplatlon, transects){
+  
+  transects_fortify = ggplot2::fortify(transects)
+  
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
+    ggplot2::geom_line(data = transects_fortify, ggplot2::aes(x = long, y = lat, group = id), col = "white") + 
+    #ggplot2::theme_minimal() +
+    #limits on x and y axes
+    ggplot2::xlim(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1]) +
+    ggplot2::ylim(maplatlon$bbox$p2[2], maplatlon$bbox$p1[2]) +
+    #add scalebar
+    ggsn::scalebar(data = NULL, dist = 5, transform = TRUE, model = "WGS84", dist_unit = "km", height = 0.3,
+                   x.min = 164.2, x.max = 165, y.min = -21.84, y.max = -21.82,
+                   st.dist = 1, st.color = "white", box.color = "white", border.size = 0.5, box.fill = c("white", "white"), st.size = 3.4) +
+    #north arrow
+    ggspatial::annotation_north_arrow(location = "bl", height = grid::unit(0.7, "cm"),  width = grid::unit(0.5, "cm"), 
+                                      pad_y = grid::unit(1, "cm"), pad_x = grid::unit(1.2, "cm"), 
+                                      style = ggspatial::north_arrow_orienteering(line_col = "white", text_col = "white")) +
+    ggplot2::labs(x = "Longitude", y = "Latitude") +
+    ggplot2::theme_light()
+  
+  ggplot2::ggsave(here::here("outputs/map_transects.png"), map, width = 7, height = 5)
+  
+}
+
+
+
+
+#' Make map of selected transect lines with mpas
+#'
+#' @param telem
+#' @param maplatlon
+#' @param transects
+#'
+#' @return
+#' @export
+#'
+
+map_transects_mpas <- function(maplatlon, transects, pa){
+  
+  transects_fortify = ggplot2::fortify(transects)
+  
+  pa2 = pa %>%
+    ggplot2::fortify(region = "NAME")
+    
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
+    ggplot2::geom_line(data = transects_fortify, ggplot2::aes(x = long, y = lat, group = id), col = "white") + 
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "ÃŽle Verte"), ggplot2::aes(x = long, y = lat), col = "yellow", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "Roche PercÃ©e et de la Baie des Tortues"), ggplot2::aes(x = long, y = lat), col = "yellow", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "PoÃ©"), ggplot2::aes(x = long, y = lat), col = "yellow", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id =="Ouano"), ggplot2::aes(x = long, y = lat), col = "yellow", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "Parc de la Zone CÃ´tiÃ¨re Ouest"), ggplot2::aes(x = long, y = lat), col = "orange", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id =="Lagoons of New Caledonia: Reef Diversity and Associated Ecosystems"), ggplot2::aes(x = long, y = lat), col = "yellow", alpha = 0) + #mpa polygon in yellow
+    
+    #ggplot2::theme_minimal() +
+    #limits on x and y axes
+    ggplot2::xlim(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1]) +
+    ggplot2::ylim(maplatlon$bbox$p2[2], maplatlon$bbox$p1[2]) +
+    #add scalebar
+    ggsn::scalebar(data = NULL, dist = 5, transform = TRUE, model = "WGS84", dist_unit = "km", height = 0.3,
+                   x.min = 164.2, x.max = 165, y.min = -21.84, y.max = -21.82,
+                   st.dist = 1, st.color = "white", box.color = "white", border.size = 0.5, box.fill = c("white", "white"), st.size = 3.4) +
+    #north arrow
+    ggspatial::annotation_north_arrow(location = "bl", height = grid::unit(0.7, "cm"),  width = grid::unit(0.5, "cm"), 
+                                      pad_y = grid::unit(1, "cm"), pad_x = grid::unit(1.2, "cm"), 
+                                      style = ggspatial::north_arrow_orienteering(line_col = "white", text_col = "white")) +
+    ggplot2::labs(x = "Longitude", y = "Latitude") +
+    ggplot2::theme_light()
+  
+  ggplot2::ggsave(here::here("outputs/map_transects_mpas.png"), map, width = 7, height = 5)
+  
+}
+
+
+
+
+
+#' Make New caledonia map with Poé location
+#'
+#' @return
+#' @export
+#'
+
+map_new_caledonia_big_mpas <- function(mpas, transects){
+  
+  # Use raster::getData("ISO3") to see codes
+  new_caledonia <- raster::getData("GADM", country = "NCL", level = 1)
+
+  png(here::here("outputs", "map_new_caledonia_big_mpas.png"), width = 960, height = 960)
+  plot(subset(mpas, mpas@data$NAME == "Lagoons of New Caledonia: Reef Diversity and Associated Ecosystems"), border = "dark blue", lwd = 2, 
+       xlim = c(164.8, 166), ylim = c(-21.9,-21.3))
+  plot(subset(mpas, mpas@data$NAME == "Parc de la Zone CÃ´tiÃ¨re Ouest"), add = T, border = "cyan", lwd = 2)
+  plot(subset(mpas, mpas@data$NAME == "ÃŽle Verte"), add = T, border = "orange", lwd = 2)
+  plot(subset(mpas, mpas@data$NAME == "PoÃ©"), add = T, border = "orange", lwd = 2)
+  plot(subset(mpas, mpas@data$NAME == "Roche PercÃ©e et de la Baie des Tortues" ), add = T, border = "orange", lwd = 2)
+  plot(subset(mpas, mpas@data$NAME == "Ouano" ), add = T, border = "orange", lwd = 2)
+  plot(transects, add = T)
+  plot(new_caledonia, col ="#999999", border = "black", lwd = 1, cex = 2, add = T ) 
+  box()
+  #add arrow (can't change size)
+  #cartography::north(pos = "bottomleft", col = "black")
+  #add scalebar
+  raster::scalebar(30, type='bar', below = "Km", lonlat = TRUE, lwd = 30)
+  #add text
+  raster::text(165.3,-21.8, label = "Lagoons of New Caledonia", col = "dark blue", cex = 1.8, font = 1)
+  raster::text(165.55,-21.9, label = "West coast parc", col = "cyan", cex = 1.8, font = 1)
+  raster::text(165.2,-21.7, label = "No-take mpas", col = "orange", cex = 1.8, font = 1)
+  dev.off()
+  
+}
+
+
+#' Make map of selected transect lines with no take mpas
+#'
+#' @param telem
+#' @param maplatlon
+#' @param transects
+#'
+#' @return
+#' @export
+#'
+
+map_transects_notake_mpas <- function(maplatlon, transects, pa){
+  
+  transects_fortify = ggplot2::fortify(transects)
+  
+  pa2 = pa %>%
+    ggplot2::fortify(region = "NAME")
+  
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
+    ggplot2::geom_line(data = transects_fortify, ggplot2::aes(x = long, y = lat, group = id), col = "white") + 
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "ÃŽle Verte"), ggplot2::aes(x = long, y = lat), col = "yellow", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "Roche PercÃ©e et de la Baie des Tortues"), ggplot2::aes(x = long, y = lat), col = "yellow", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "PoÃ©"), ggplot2::aes(x = long, y = lat), col = "yellow", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id =="Ouano"), ggplot2::aes(x = long, y = lat), col = "yellow", alpha = 0) + #mpa polygon in yellow
+    #ggplot2::theme_minimal() +
+    #limits on x and y axes
+    ggplot2::xlim(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1]) +
+    ggplot2::ylim(maplatlon$bbox$p2[2], maplatlon$bbox$p1[2]) +
+    #add scalebar
+    ggsn::scalebar(data = NULL, dist = 5, transform = TRUE, model = "WGS84", dist_unit = "km", height = 0.3,
+                   x.min = 164.2, x.max = 165, y.min = -21.84, y.max = -21.82,
+                   st.dist = 1, st.color = "white", box.color = "white", border.size = 0.5, box.fill = c("white", "white"), st.size = 3.4) +
+    #north arrow
+    ggspatial::annotation_north_arrow(location = "bl", height = grid::unit(0.7, "cm"),  width = grid::unit(0.5, "cm"), 
+                                      pad_y = grid::unit(1, "cm"), pad_x = grid::unit(1.2, "cm"), 
+                                      style = ggspatial::north_arrow_orienteering(line_col = "white", text_col = "white")) +
+    ggplot2::labs(x = "Longitude", y = "Latitude") +
+    ggplot2::theme_light()
+  
+  ggplot2::ggsave(here::here("outputs/map_transects_notake_mpas.png"), map, width = 7, height = 5)
+  
+}

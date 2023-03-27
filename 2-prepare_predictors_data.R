@@ -37,6 +37,9 @@ coral_millenium = read_original_coralnc_millenium()
 # Make distance to mainland raster
 dist_land = make_dist_to_land_raster(coral_millenium, rast_xy)
 
+# write raster
+raster::writeRaster(dist_land, here::here("data", "processed_data", "predictors", "dist_land_no_mask.grd"), overwrite=TRUE)
+
 # mask to remove land
 dist_land = mask_with_land(dist_land, dist_land)
 
@@ -329,12 +332,15 @@ map_depth(depth)
 # write raster
 raster::writeRaster(depth, here::here("data", "processed_data", "predictors", "depth.grd"), overwrite=TRUE)
 
+# calculate depth in surveyed block
+# block <- read_project_surveyed_block()
+depth_mask <- raster::mask(depth, block)
+depth_mask[depth_mask < -20] <- NA
+raster::plot(depth_mask)
 
-
-
-
-
-
+depth_mask <- raster::mask(depth, block)
+depth_mask[depth_mask < -30] <- NA
+raster::plot(depth_mask)
 
 ######################################## MPA ########################################
 
@@ -370,6 +376,19 @@ map_mpa_type_no_take_only(mpa_type_no_take_only)
 
 # write raster
 raster::writeRaster(mpa_type_no_take_only, here::here("data", "processed_data", "predictors", "mpa_type_no_take_only.grd"), overwrite=TRUE)
+
+
+
+
+# Make mpa type raster no-take only poe / ile verte (for msp)
+library(raster) #for good functionning of levels in function
+mpa_type_no_take_only_poe_ile_verte = make_mpa_type_raster_no_take_only_poe_ile_verte(rast_xy) #ran outside function to avoi dbug
+
+# mask based on dist to mainland raster
+mpa_type_no_take_only_poe_ile_verte = mask_with_land(mpa_type_no_take_only_poe_ile_verte, dist_land)
+
+# write raster
+raster::writeRaster(mpa_type_no_take_only_poe_ile_verte, here::here("data", "processed_data", "predictors", "mpa_type_no_take_only_poe_ile_verte.grd"), overwrite=TRUE)
 
 
 

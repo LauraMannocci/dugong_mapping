@@ -2,7 +2,7 @@
 % Please edit documentation in R/make_basic_maps.R
 \name{map_indiv_dugong_stage_telemetry}
 \alias{map_indiv_dugong_stage_telemetry}
-\title{Make map of telemetry with individual dugong observations differenciating stage (adult vs juvenile)  (1 dot = 1 obs centered on images so dots can be overlaid)}
+\title{Make map of telemetry with individual dugong observations  (1 dot = 1 obs centered on images so dots can be overlaid)}
 \usage{
 map_indiv_dugong_stage_telemetry(maplatlon, telem, telem_obs)
 }
@@ -10,5 +10,5 @@ map_indiv_dugong_stage_telemetry(maplatlon, telem, telem_obs)
 \item{telem_obs}{}
 }
 \description{
-Make map of telemetry with individual dugong observations differenciating stage (adult vs juvenile)  (1 dot = 1 obs centered on images so dots can be overlaid)
+Make map of telemetry with individual dugong observations  (1 dot = 1 obs centered on images so dots can be overlaid)
 }

@@ -583,6 +583,46 @@ read_mpanc <- function(){
 
 
 
+#' Extract study area mpas
+#'
+#' @param pa
+#'
+#' @return
+#' @export
+#'
+
+extract_mpas <- function(pa){
+  
+  pa = subset(pa, pa$NAME %in% c("PoÃ©", "Ouano", "ÃŽle Verte",  
+                                 "Lagoons of New Caledonia: Reef Diversity and Associated Ecosystems", "Parc de la Zone CÃ´tiÃ¨re Ouest", 
+                                 "Roche PercÃ©e et de la Baie des Tortues"))
+  
+  return(pa)
+  
+}
+
+
+#' Extract study area no take mpas
+#'
+#' @param pa
+#'
+#' @return
+#' @export
+#'
+
+extract_notake_mpas <- function(pa){
+  
+  pa = subset(pa, pa$NAME %in% c("PoÃ©", "Ouano", "ÃŽle Verte",  
+                                  "Roche PercÃ©e et de la Baie des Tortues"))
+
+  
+  return(pa)
+  
+}
+
+
+
+
 #' Read transect points
 #'
 #' @return
