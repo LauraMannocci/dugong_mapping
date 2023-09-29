@@ -4,7 +4,7 @@
 \alias{make_dist_to_seagrass_raster}
 \title{Make distance to seagrass raster}
 \usage{
-make_dist_to_seagrass_raster(cor, raster)
+make_dist_to_seagrass_raster(seag, rast)
 }
 \arguments{
 \item{raster}{}

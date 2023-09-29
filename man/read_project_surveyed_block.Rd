@@ -2,10 +2,10 @@
 % Please edit documentation in R/modeling.R
 \name{read_project_surveyed_block}
 \alias{read_project_surveyed_block}
-\title{read and project surveyed bloc (created in qgis)}
+\title{read and project surveyed block (created in qgis)}
 \usage{
 read_project_surveyed_block()
 }
 \description{
-read and project surveyed bloc (created in qgis)
+read and project surveyed block (created in qgis)
 }

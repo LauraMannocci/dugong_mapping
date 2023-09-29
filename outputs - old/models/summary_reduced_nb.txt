@@ -1,0 +1,24 @@
+
+Family: Negative Binomial(0.021) 
+Link function: log 
+
+Formula:
+abundance ~ s(deep_lagoon) + s(turbidity) + s(dist_seagrass) + 
+    offset(log(area_surveyed_m2))
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -14.8628     0.3227  -46.05   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+                   edf Ref.df Chi.sq  p-value    
+s(deep_lagoon)   2.869  3.534  6.776   0.0986 .  
+s(turbidity)     1.000  1.000 16.404 5.17e-05 ***
+s(dist_seagrass) 4.494  5.529 16.130   0.0101 *  
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0196   Deviance explained = 39.1%
+-REML = 248.05  Scale est. = 1         n = 1806

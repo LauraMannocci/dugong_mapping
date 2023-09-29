@@ -1,0 +1,43 @@
+
+Family: Zero inflated Poisson(-3.306,0.584) 
+Link function: identity 
+
+Formula:
+abundance_round ~ s(rubble) + s(coral_algae) + s(microalgal_mats) + 
+    s(seagrass) + s(sand) + s(rock) + s(back_reef_slope) + s(deep_lagoon) + 
+    s(inner_reef_flat) + s(outer_reef_flat) + s(plateau) + s(reef_crest) + 
+    s(reef_slope) + s(shallow_lagoon) + s(turbidity) + s(travel_time) + 
+    s(dist_reef) + s(depth) + s(dist_seagrass) + offset(log(area_surveyed_m2))
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  -14.218      2.181  -6.518 7.13e-11 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+                         edf Ref.df Chi.sq  p-value    
+s(rubble)          1.494e-04      9  0.000 0.765138    
+s(coral_algae)     3.400e-04      9  0.000 0.868039    
+s(microalgal_mats) 1.626e-04      9  0.000 0.866184    
+s(seagrass)        2.008e+00      8 23.884 2.73e-06 ***
+s(sand)            5.047e-01      9  0.996 0.137785    
+s(rock)            1.743e+00      9  5.840 0.030818 *  
+s(back_reef_slope) 1.270e+00      9  2.954 0.090272 .  
+s(deep_lagoon)     2.356e+00      9 82.022  < 2e-16 ***
+s(inner_reef_flat) 1.068e-04      9  0.000 0.945988    
+s(outer_reef_flat) 6.351e+00      9 99.277  < 2e-16 ***
+s(plateau)         1.745e-05      9  0.000 0.804824    
+s(reef_crest)      9.419e-01      9 15.256 3.56e-05 ***
+s(reef_slope)      2.609e-04      9  0.000 0.897124    
+s(shallow_lagoon)  4.961e-04      9  0.000 0.458981    
+s(turbidity)       9.470e-01      9 15.599 3.73e-05 ***
+s(travel_time)     9.557e-01      9 18.741 6.68e-06 ***
+s(dist_reef)       2.084e+00      9 12.732 0.000796 ***
+s(depth)           2.671e+00      9 16.968 0.000176 ***
+s(dist_seagrass)   6.519e+00      9 53.745  < 2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Deviance explained = 87.1%
+-REML = 263.57  Scale est. = 1         n = 1806

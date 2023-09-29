@@ -16,10 +16,16 @@ lon1 = 164.8 ; lon2 = 165.8
 raster_res_m = 500
 
 # make study area raster in lat lon  (resolution 0.01 degrees) 
-rast_latlon = make_area_raster_latlon(lat1, lon1, lat2, lon2, 0.01)
+# rast_latlon = make_area_raster_latlon(lat1, lon1, lat2, lon2, 0.01)
 
 # make study area raster projected to lambert New caledonia in meters with given resolution in meters (resolution 500 meters) 
 rast_xy = make_area_raster_xy(lat1, lon1, lat2, lon2, raster_res_m)
+
+
+# make basic map of New caledonia weith surveyed block
+new_caledonia <- raster::getData("GADM", country = "NCL", level = 1)
+surv_block = read_surveyed_block()
+map_new_caledonia_surveyed_block(new_caledonia, surv_block)
 
 
 
@@ -38,7 +44,6 @@ footprint_height = footprint_width * image_height/image_width #in meters
 mean_speed = 30.55 # in m/s (in km/h: 110) from ulm OR 33 # in m/s (in km/h: 120) from ulm
 frame_per_s = 3 # extraction rate in megafauna-project
 overlap = (mean_speed / frame_per_s) / footprint_height
-
 
 
 
@@ -71,13 +76,19 @@ videos = select_wcoast_videos(videos, ls_videos)
 #select west coast telemetry
 telemetry = select_telemetry_wcoast(telemetry, ls_videos)
 
+#select telemetry in dates
+telemetry = subset(telemetry, telemetry$date %in% c("2021-06-04", "2021-06-05", "2021-07-29", "2021-08-04"))
+
+length(unique(telemetry$image_id)) #74375 total images
+
 #select dugong observations
 telemetry_obs = subset(telemetry, telemetry$object == "Dugong_certain_probable" )
+
 
 #count total number of individuals observed 
 telemetry_obs %>%
   dplyr::group_by(object) %>%
-  dplyr::summarise(n_tot = dplyr::n()) #1949
+  dplyr::summarise(n_tot = dplyr::n()) #1648
 
 
 
@@ -122,14 +133,14 @@ telemetry_on = select_on_effort_wcoast(telemetry, off_effort_transit, off_effort
 telemetry_obs_on = select_on_effort_wcoast(telemetry_obs, off_effort_transit, off_effort_loop)
 
 #total on effort images
-nrow(telemetry_on) #109429 images
+nrow(telemetry_on) #68599 images
 
 #number of images countaining dugongs
 telemetry_on %>% 
   dplyr::filter(object == "Dugong_certain_probable") %>% 
   dplyr::distinct(image_id) -> distinct
 
-nrow(distinct) #304
+nrow(distinct) #168
 
 
 
@@ -151,8 +162,8 @@ telemetry_obs_on_dupl_flag = xlsx::read.xlsx(here::here("data", "processed_data"
 
 #remove duplicate observations
 telemetry_obs_on_dupl_rm = subset(telemetry_obs_on_dupl_flag, telemetry_obs_on_dupl_flag$duplicate == "no")
-nrow(telemetry_obs_on_dupl_rm) #162 unique observations
-table(telemetry_obs_on_dupl_rm$stage) # 139 adults 23 juveniles
+nrow(telemetry_obs_on_dupl_rm) #119 unique observations
+table(telemetry_obs_on_dupl_rm$stage) # 100 adults 19 juveniles
 
 
 #correct number of observations for availability bias following Hagihara et al 2016
@@ -175,7 +186,7 @@ telemetry_obs_on %>%
   # dplyr::group_by(image_id) %>% 
   dplyr::distinct(image_id) -> distinct
 
-nrow(distinct) #59
+nrow(distinct) #35
 
 ############################################ MAKE BASIC MAPS ON EFFORT #############################################################
 
@@ -183,6 +194,8 @@ nrow(distinct) #59
 #open street map
 maplatlon = osm_map(lat1, lon1, lat2, lon2)
 
+#open street map
+maplatlon_extended = osm_map(lat1, lon1, lat2, lon2+0.05)
 
 ###### telemetry only
 map_telemetry(maplatlon, telemetry_on)
@@ -194,15 +207,27 @@ map_telemetry_date(maplatlon, telemetry_on)
 map_telemetry_date_separate(maplatlon, telemetry_on)
 
 
-#NB the 4 below maps are nb of indiv ***uncorrected for avail bias*** 
+#NB the below maps are nb of indiv ***uncorrected for avail bias*** 
 ####### telemetry with individual dugong observations (1 dot = 1 obs centered on image so dots can be overlaid)
 map_indiv_dugong_telemetry(maplatlon, telemetry_on, telemetry_obs_on)
+
+####### telemetry with individual dugong observations (1 dot = 1 obs centered on image so dots can be overlaid) with number <=3 and >3
+map_indiv_dugong_telemetry_inf_sup_3(maplatlon, telemetry_on, telemetry_obs_on)
 
 ####### telemetry with individual dugong observations differenciating stage  (1 dot = 1 obs centered on image so dots can be overlaid)
 map_indiv_dugong_stage_telemetry(maplatlon, telemetry_on, telemetry_obs_on)
 
-####### telemetry with individual dugong observations per image (obs summed per image)
+####### telemetry with individual dugong observations per image (obs summed per image, duplicates removed)
 map_indiv_dugong_per_image_telemetry(maplatlon, telemetry_on, telemetry_obs_on)
+
+####### telemetry with individual dugong observations per image (obs summed per image, duplicates removed) per date
+map_indiv_dugong_per_image_telemetry_per_date(maplatlon, telemetry_on, telemetry_obs_on)
+
+####### telemetry with individual dugong observations per image (obs summed per image, duplicates removed) with no-take maps
+map_indiv_dugong_per_image_telemetry_no_take_mpas(maplatlon_extended, telemetry_on, telemetry_obs_on, mpas_notake)
+
+####### telemetry with individual dugong observations per image (obs summed per image, duplicates removed) with no-take maps with number <= 3 and > 3
+map_indiv_dugong_per_image_telemetry_no_take_mpas_inf_sup_3(maplatlon_extended, telemetry_on, telemetry_obs_on, mpas_notake)
 
 ####### telemetry with individual dugong observations per image (obs summed per image)
 map_indiv_dugong_per_image_stage_telemetry(maplatlon, telemetry_on, telemetry_obs_on)
@@ -228,10 +253,11 @@ map_transects_mpas(maplatlon, lines_surveyed, mpas2)
 mpas_notake <- extract_notake_mpas(mpas)
 map_transects_notake_mpas(maplatlon, lines_surveyed, mpas_notake)
 #big mpas only (run outside function)
-map_new_caledonia_big_mpas(mpas)
+map_new_caledonia_big_mpas(mpas, lines_surveyed)
+
+
 
 ############################################ MAKE DENSITY MAPS ON REGULAR GRID ON EFFORT #############################################################
-
 
 
 #project osm for density mapping
@@ -262,16 +288,16 @@ list_lines = convert_telemetry_points_to_lines(telemetry_on)
 grid_tracks_per_date = sum_length_per_grid_per_date(grid, list_lines, dates)
 
 #Total surveyed length
-sum(grid_tracks_per_date$length, na.rm=T) #1145561  m
+sum(grid_tracks_per_date$length, na.rm=T) #(1145561  m) 696093.7 m
 
 #Mean surveyed length per survey date
-sum(grid_tracks_per_date$length, na.rm=T) / length(dates) #163651.6 m
+sum(grid_tracks_per_date$length, na.rm=T) / length(dates) #174023.4 m
 
 #Total surveyed area
-footprint_width * sum(grid_tracks_per_date$length, na.rm=T) # 101652630 m2 =  101.6 km2
+footprint_width * sum(grid_tracks_per_date$length, na.rm=T) # (101652630 m2 =  101.6 km2) 61768657 m2 = 62 km2
 
 #Mean surveyed area per survey date
-footprint_width * sum(grid_tracks_per_date$length, na.rm=T) / length(dates) #14521804 m2 = 14.2 km2
+footprint_width * sum(grid_tracks_per_date$length, na.rm=T) / length(dates) #14521804 m2 = 14.2 km2 (15442164 m2 = 15.4 km2)
 
 #Map length of tracks per grid cell per date
 map_tracklen_per_grid_per_date(maplatlon_proj, grid_tracks_per_date, 0.5)
@@ -288,31 +314,15 @@ grid_obs_per_date = count_obs_per_grid_per_date(grid, telemetry_obs_on)
 
 #Map number of species observations per grid cell per date
 map_obs_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, "Dugong_certain_probable", 0.2)
-# map_obs_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, "Turtle", 0.2)
-# map_obs_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, "Shark", 0.2)
-# map_obs_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, "Round_ray", 0.2)
-# map_obs_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, "Eagle_ray", 0.2)
 
 #Map number of species observations per grid cell per date with zeros
 map_obs_per_grid_per_date_species_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, "Dugong_certain_probable", 0.2)
-# map_obs_per_grid_per_date_species_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, "Turtle", 0.2)
-# map_obs_per_grid_per_date_species_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, "Shark", 0.2)
-# map_obs_per_grid_per_date_species_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, "Round_ray", 0.2)
-# map_obs_per_grid_per_date_species_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, "Eagle_ray", 0.2)
 
 #Map number of species observations per grid cell (all dates)
 map_obs_per_grid_species(maplatlon_proj, grid_obs_per_date, "Dugong_certain_probable", 0.5)
-# map_obs_per_grid_species(maplatlon_proj, grid_obs_per_date, "Turtle", 0.5)
-# map_obs_per_grid_species(maplatlon_proj, grid_obs_per_date, "Shark", 0.5)
-# map_obs_per_grid_species(maplatlon_proj, grid_obs_per_date, "Round_ray", 0.5)
-# map_obs_per_grid_species(maplatlon_proj, grid_obs_per_date, "Eagle_ray", 0.5)
 
 #Map number of species observations per grid cell (all dates) with zeros 
 map_obs_per_grid_species_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, "Dugong_certain_probable", 0.5)
-# map_obs_per_grid_species_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, "Turtle", 0.5)
-# map_obs_per_grid_species_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, "Shark", 0.5)
-# map_obs_per_grid_species_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, "Round_ray", 0.5)
-# map_obs_per_grid_species_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, "Eagle_ray", 0.5)
 
 
 ### Densities
@@ -353,7 +363,8 @@ r_density_dugong = get_density_stack_species(df_all_species, "Dugong_certain_pro
 r_density_dugong = extend_raster(r_density_dugong, rast_xy)
 
 #write
-raster::writeRaster(r_density_dugong[[7]], here::here("data", "processed_data", "density", "dugong_density.grd"), overwrite=TRUE)
+#raster::writeRaster(r_density_dugong[[7]], here::here("data", "processed_data", "density", "dugong_density.grd"), overwrite=TRUE)
+raster::writeRaster(r_density_dugong[[4]], here::here("data", "processed_data", "density", "dugong_density.grd"), overwrite=TRUE)
 
 
 
@@ -370,6 +381,10 @@ r_abundance_dugong = raster::stack(r_abundance_dugong, raster::rasterFromXYZ(df_
 #map abundance
 map_abundance_per_grid_species_with_zeros(maplatlon_proj, r_abundance_dugong[[1]], "Dugong_certain_probable", 0.5)
 
+#mean and sd
+mean(raster::values(r_abundance_dugong[[1]]), na.rm=T)
+sd(raster::values(r_abundance_dugong[[1]]), na.rm=T)
+
 #map surveyed area
 map_surveyed_area_per_grid_species_with_zeros(maplatlon_proj, r_abundance_dugong[[2]], "Dugong_certain_probable", 0.5)
 
@@ -379,6 +394,7 @@ r_abundance_dugong = extend_raster(r_abundance_dugong, rast_xy)
 #write abundance and surveyed area rasters
 raster::writeRaster(r_abundance_dugong[[1]], here::here("data", "processed_data", "abundance", "dugong_abundance.grd"), overwrite=TRUE)
 raster::writeRaster(r_abundance_dugong[[2]], here::here("data", "processed_data", "abundance", "area_surveyed.grd"), overwrite=TRUE)
+
 
 
 ############################################ MAKE ABUNDANCE AND SURVEYED AREA MAPS #############################################################

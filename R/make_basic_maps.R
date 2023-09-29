@@ -1,5 +1,33 @@
 
 
+#' make basic map of New caledonia weith surveyed block
+#'
+#' @param nc 
+#' @param block 
+#'
+#' @return
+#' @export
+#'
+
+map_new_caledonia_surveyed_block <- function(nc, block){
+  
+  png(here::here("outputs/map_new_caledonia_surveyed_block.png"))
+  par(mar = c(0.5,0.5,0.5,0.5), bg = "white")
+  raster::plot(nc, xlim = c(163.8,166.93), ylim = c(-21.8,-20.5), col ="#999999",  border ="#999999", lwd = 1, cex = 2) 
+  raster::plot(block, border = "black", col = "white", lwd = 2, cex = 2, add = T) 
+  #add arrow 
+  cartography::north(pos = "bottomleft", col = "black")
+  #add scalebar
+  raster::scalebar(100, type='bar', below = "Km", lonlat = TRUE, lwd = 100, cex = 2)
+  raster::text(165.88,-20, label = "NEW CALEDONIA", col = "black", cex = 2, font = 1)
+  box()
+  dev.off()
+  
+}
+
+
+
+
 #' Make open street map for study area (satellite view)
 #'
 #' @param lat1
@@ -253,9 +281,9 @@ map_indiv_species_telemetry <- function(maplatlon, telem, telem_obs){
 map_indiv_dugong_telemetry <- function(maplatlon, telem, telem_obs){
   
   map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
-    ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, alpha = 0.5) + #telem only
+    #ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, alpha = 0.5) + #telem only
     ggplot2::geom_point(data = telem_obs, ggplot2::aes(x = lon, y = lat, color = object), size = 0.2, alpha = 0.5) +
-    ggplot2::ggtitle(paste0("Dugong_certain_probable - number = ", nrow(telem_obs))) +
+    ggplot2::ggtitle(paste0("All dugongs - number = ", nrow(telem_obs))) +
     ggplot2::theme(legend.position="none") +
     #ggplot2::theme_minimal() +
     #limits on x and y axes
@@ -271,6 +299,70 @@ map_indiv_dugong_telemetry <- function(maplatlon, telem, telem_obs){
 
 
 
+
+
+#' Make map of telemetry with individual dugong observations (1 dot = 1 obs centered on image so dots can be overlaid) with number <=3 and >3
+#'
+#' @param telem
+#' @param maplatlon
+#' @param telem_obs
+#'
+#' @return
+#' @export
+#'
+
+map_indiv_dugong_telemetry_inf_sup_3 <- function(maplatlon, telem, telem_obs){
+  
+  telem_obs %>% 
+    dplyr::group_by(image_id, lat, lon) %>% 
+    dplyr::summarise(Dugongs = dplyr::n()) -> telem_obs
+  
+  #number <= 3
+  
+  telem_obs %>% 
+    dplyr::filter(Dugongs <= 3) -> telem_obs_inf_3
+  
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
+    #ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, alpha = 0.5) + #telem only
+    ggplot2::geom_point(data = telem_obs_inf_3, ggplot2::aes(x = lon, y = lat), size = 0.2, color = "pink") +
+    ggplot2::ggtitle("1 - 3 indiv. per image") +
+    ggplot2::theme(legend.position="none") +
+    #ggplot2::theme_minimal() +
+    #limits on x and y axes
+    ggplot2::xlim(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1]) +
+    ggplot2::ylim(maplatlon$bbox$p2[2], maplatlon$bbox$p1[2]) +
+    ggplot2::scale_y_continuous(breaks = c(-21.8, -21.6, -21.4, -21.2), expand = c(0, 0)) +
+    ggplot2::scale_x_continuous(breaks = c(165, 165.25, 165.5, 165.75), expand = c(0, 0)) +
+    ggplot2::theme(axis.title = ggplot2::element_blank(),
+                   panel.background = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5))
+  
+  ggplot2::ggsave(here::here("outputs/map_indiv_dugong_telemetry_inf_3.png"), map, width = 7, height = 5)
+  
+  
+  #number > 3
+  
+  telem_obs %>% 
+    dplyr::filter(Dugongs > 3) -> telem_obs_sup_3
+  
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
+    #ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, alpha = 0.5) + #telem only
+    ggplot2::geom_point(data = telem_obs_sup_3, ggplot2::aes(x = lon, y = lat), size = 0.2, color = "brown") +
+    ggplot2::ggtitle("6 - 24 indiv. per image") +
+    ggplot2::theme(legend.position="none") +
+    #ggplot2::theme_minimal() +
+    #limits on x and y axes
+    ggplot2::xlim(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1]) +
+    ggplot2::ylim(maplatlon$bbox$p2[2], maplatlon$bbox$p1[2]) +
+    ggplot2::scale_y_continuous(breaks = c(-21.8, -21.6, -21.4, -21.2), expand = c(0, 0)) +
+    ggplot2::scale_x_continuous(breaks = c(165, 165.25, 165.5, 165.75), expand = c(0, 0)) +
+    ggplot2::theme(axis.title = ggplot2::element_blank(),
+                   panel.background = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5))
+  
+  ggplot2::ggsave(here::here("outputs/map_indiv_dugong_telemetry_sup_3.png"), map, width = 7, height = 5)
+  
+}
 
 
 
@@ -291,11 +383,11 @@ map_indiv_dugong_telemetry <- function(maplatlon, telem, telem_obs){
 
 map_indiv_dugong_stage_telemetry <- function(maplatlon, telem, telem_obs){
   
-  labels <- c("adult" = paste0("adults number=", nrow(telem_obs[telem_obs$stage=="adult",])),
-              "juvenile" = paste0("juveniles number=", nrow(telem_obs[telem_obs$stage=="juvenile",])))
+  labels <- c("adult" = paste0("Adults =", nrow(telem_obs[telem_obs$stage=="adult",])),
+              "juvenile" = paste0("Juveniles =", nrow(telem_obs[telem_obs$stage=="juvenile",])))
                                        
   map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
-    ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, alpha = 0.5) + #telem only
+    #ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, alpha = 0.5) + #telem only
     ggplot2::geom_point(data = telem_obs, ggplot2::aes(x = lon, y = lat, color = object), size = 0.2, alpha = 0.5) +
     ggplot2::facet_wrap(~stage, nrow = 2, labeller = ggplot2::as_labeller(labels)) + #facet per stage
     ggplot2::theme(legend.position="none") +
@@ -366,21 +458,27 @@ map_indiv_dugong_per_image_telemetry <- function(maplatlon, telem, telem_obs){
   
   #calculate group size per image (uncorrected by avail bias because all rows summed)
   telem_obs %>% 
-    dplyr::group_by(image_id, lat, lon, stage) %>% 
-    dplyr::summarise(Dugongs = dplyr::n()) -> telem_obs
+    dplyr::group_by(image_id, lat, lon) %>% 
+    dplyr::summarise(Individuals = dplyr::n()) -> telem_obs
+  
+  mean(telem_obs$Individuals)
+  sd(telem_obs$Individuals)
   
   map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
     ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, col = "white", alpha = 0.01) + #telem only
-    ggplot2::geom_point(data = telem_obs, ggplot2::aes(x = lon, y = lat, size = Dugongs), color = "pink", alpha = 0.7) +
+    ggplot2::geom_point(data = telem_obs, ggplot2::aes(x = lon, y = lat, size = Individuals), color = "pink", alpha = 0.7) +
     #ggplot2::theme_minimal() +
     #limits on x and y axes
+    ggplot2::labs(size = "Indiv. / image") +
     ggplot2::xlim(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1]) +
     ggplot2::ylim(maplatlon$bbox$p2[2], maplatlon$bbox$p1[2]) +
-    ggplot2::ylab("Latitude") +
-    ggplot2::xlab("Longitude") +
+    ggplot2::scale_y_continuous(breaks = c(-21.8, -21.6, -21.4, -21.2), expand = c(0, 0)) +
+    ggplot2::scale_x_continuous(breaks = c(165, 165.3, 165.6), expand = c(0, 0)) +
+    #scale
+    ggplot2::scale_size(breaks=c(1, 2, 3, 10, 20, 24)) +
     ggplot2::theme(panel.background = ggplot2::element_blank(),
-                   plot.title = ggplot2::element_text(hjust = 0.5)) +
-    ggplot2::theme_light()
+                   axis.title = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5)) 
   
   ggplot2::ggsave(here::here("outputs/map_indiv_dugong_per_image_telemetry.png"), map, width = 7, height = 5)
   
@@ -388,6 +486,207 @@ map_indiv_dugong_per_image_telemetry <- function(maplatlon, telem, telem_obs){
 
 
 
+
+#' Make map of telemetry with individual dugong observations per image per date
+#'
+#' @param telem
+#' @param maplatlon
+#' @param telem_obs
+#'
+#' @return
+#' @export
+#'
+
+map_indiv_dugong_per_image_telemetry_per_date <- function(maplatlon, telem, telem_obs){
+  
+  #calculate group size per image (uncorrected by avail bias because all rows summed)
+  telem_obs %>% 
+    dplyr::group_by(image_id, lat, lon, date) %>% 
+    dplyr::summarise(Individuals = dplyr::n()) -> telem_obs
+  
+  mean(telem_obs$Individuals)
+  sd(telem_obs$Individuals)
+  
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
+    ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, col = "white", alpha = 0.01) + #telem only
+    ggplot2::geom_point(data = telem_obs, ggplot2::aes(x = lon, y = lat, size = Individuals), color = "pink", alpha = 0.7) +
+    ggplot2::facet_wrap(~date, nrow = 3) + #facet per date
+    #ggplot2::theme_minimal() +
+    #limits on x and y axes
+    ggplot2::labs(size = "Indiv. / image") +
+    ggplot2::xlim(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1]) +
+    ggplot2::ylim(maplatlon$bbox$p2[2], maplatlon$bbox$p1[2]) +
+    ggplot2::scale_y_continuous(breaks = c(-21.8, -21.6, -21.4, -21.2), expand = c(0, 0)) +
+    ggplot2::scale_x_continuous(breaks = c(165, 165.3, 165.6), expand = c(0, 0)) +
+    #scale
+    ggplot2::scale_size(breaks=c(1, 2, 3, 10, 20, 24)) +
+    ggplot2::theme(panel.background = ggplot2::element_blank(),
+                   axis.title = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5)) 
+  
+  ggplot2::ggsave(here::here("outputs/map_indiv_dugong_per_image_telemetry_per_date.png"), map, width = 7, height = 5)
+  
+}
+
+
+
+#' Make map of telemetry with individual dugong observations per image with no take mpas
+#'
+#' @param telem
+#' @param maplatlon
+#' @param telem_obs
+#'
+#' @return
+#' @export
+#'
+
+map_indiv_dugong_per_image_telemetry_no_take_mpas <- function(maplatlon, telem, telem_obs, pa){
+  
+  pa2 = pa %>%
+    ggplot2::fortify(region = "NAME")
+  
+  #calculate group size per image (uncorrected by avail bias because all rows summed)
+  telem_obs %>% 
+    dplyr::group_by(image_id, lat, lon) %>% 
+    dplyr::summarise(Individuals = dplyr::n()) -> telem_obs
+  
+  mean(telem_obs$Individuals)
+  sd(telem_obs$Individuals)
+  
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
+    #mpas
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "ÃŽle Verte"), ggplot2::aes(x = long, y = lat), col = "orange", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "Roche PercÃ©e et de la Baie des Tortues"), ggplot2::aes(x = long, y = lat), col = "orange", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "PoÃ©"), ggplot2::aes(x = long, y = lat), col = "orange", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id =="Ouano"), ggplot2::aes(x = long, y = lat), col = "orange", alpha = 0) + #mpa polygon in yellow
+    #dugong obs
+    ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, col = "white", alpha = 0.01) + #telem only
+    ggplot2::geom_point(data = telem_obs, ggplot2::aes(x = lon, y = lat, size = Individuals), color = "pink", alpha = 0.7) +
+    #ggplot2::theme_minimal() +
+    #limits on x and y axes
+    ggplot2::labs(size = "Indiv. / image") +
+    ggplot2::xlim(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1]) +
+    ggplot2::ylim(maplatlon$bbox$p2[2], maplatlon$bbox$p1[2]) +
+    ggplot2::scale_y_continuous(breaks = c(-21.8, -21.6, -21.4, -21.2), expand = c(0, 0)) +
+    ggplot2::scale_x_continuous(breaks = c(165, 165.25, 165.5, 165.75), expand = c(0, 0)) +
+    #scale
+    ggplot2::scale_size(breaks=c(1, 2, 3, 10, 20, 24)) +
+    ggplot2::theme(panel.background = ggplot2::element_blank(),
+                   axis.title = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5)) 
+  
+  ggplot2::ggsave(here::here("outputs/map_indiv_dugong_per_image_telemetry_no_take_mpas.png"), map, width = 7, height = 5)
+  
+}
+
+
+
+#' Make map of telemetry with individual dugong observations per image with no take mpas for number per image <=3 and >3
+#'
+#' @param telem
+#' @param maplatlon
+#' @param telem_obs
+#'
+#' @return
+#' @export
+#'
+
+map_indiv_dugong_per_image_telemetry_no_take_mpas_inf_sup_3 <- function(maplatlon, telem, telem_obs, pa){
+  
+  pa2 = pa %>%
+    ggplot2::fortify(region = "NAME")
+  
+  #calculate group size per image (uncorrected by avail bias because all rows summed)
+  telem_obs %>% 
+    dplyr::group_by(image_id, lat, lon) %>% 
+    dplyr::summarise(Individuals = dplyr::n()) -> telem_obs
+  
+  #number <= 3
+  
+  telem_obs %>% 
+    dplyr::filter(Individuals <= 3) -> telem_obs_inf_3
+  
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
+    #mpas
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "ÃŽle Verte"), ggplot2::aes(x = long, y = lat), col = "orange", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "Roche PercÃ©e et de la Baie des Tortues"), ggplot2::aes(x = long, y = lat), col = "orange", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "PoÃ©"), ggplot2::aes(x = long, y = lat), col = "orange", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id =="Ouano"), ggplot2::aes(x = long, y = lat), col = "orange", alpha = 0) + #mpa polygon in yellow
+    #dugong obs
+    ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, col = "white", alpha = 0.01) + #telem only
+    ggplot2::geom_point(data = telem_obs_inf_3, ggplot2::aes(x = lon, y = lat, size = Individuals), color = "pink", alpha = 0.7) +
+    #ggplot2::theme_minimal() +
+    #limits on x and y axes
+    ggplot2::labs(size = "Indiv. / image") +
+    ggplot2::xlim(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1]) +
+    ggplot2::ylim(maplatlon$bbox$p2[2], maplatlon$bbox$p1[2]) +
+    ggplot2::scale_y_continuous(breaks = c(-21.8, -21.6, -21.4, -21.2), expand = c(0, 0)) +
+    ggplot2::scale_x_continuous(breaks = c(165, 165.25, 165.5, 165.75), expand = c(0, 0)) +
+    #scale
+    ggplot2::scale_size(breaks=c(1, 2, 3)) +
+    ggplot2::theme(panel.background = ggplot2::element_blank(),
+                   axis.title = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5)) 
+  
+  ggplot2::ggsave(here::here("outputs/map_indiv_dugong_per_image_telemetry_no_take_mpas_inf_3.png"), map, width = 7, height = 5)
+  
+  #number > 3
+  
+  telem_obs %>% 
+    dplyr::filter(Individuals > 3) -> telem_obs_sup_3
+  
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
+    #mpas
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "ÃŽle Verte"), ggplot2::aes(x = long, y = lat), col = "orange", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "Roche PercÃ©e et de la Baie des Tortues"), ggplot2::aes(x = long, y = lat), col = "orange", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "PoÃ©"), ggplot2::aes(x = long, y = lat), col = "orange", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id =="Ouano"), ggplot2::aes(x = long, y = lat), col = "orange", alpha = 0) + #mpa polygon in yellow
+    #dugong obs
+    ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, col = "white", alpha = 0.01) + #telem only
+    ggplot2::geom_point(data = telem_obs_sup_3, ggplot2::aes(x = lon, y = lat, size = Individuals), color = "pink", alpha = 0.7) +
+    #ggplot2::theme_minimal() +
+    #limits on x and y axes
+    ggplot2::labs(size = "Indiv. / image") +
+    ggplot2::xlim(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1]) +
+    ggplot2::ylim(maplatlon$bbox$p2[2], maplatlon$bbox$p1[2]) +
+    ggplot2::scale_y_continuous(breaks = c(-21.8, -21.6, -21.4, -21.2), expand = c(0, 0)) +
+    ggplot2::scale_x_continuous(breaks = c(165, 165.25, 165.5, 165.75), expand = c(0, 0)) +
+    #scale
+    ggplot2::scale_size(breaks=c(6, 10, 20, 24)) +
+    ggplot2::theme(panel.background = ggplot2::element_blank(),
+                   axis.title = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5)) 
+  
+  ggplot2::ggsave(here::here("outputs/map_indiv_dugong_per_image_telemetry_no_take_mpas_sup_3.png"), map, width = 7, height = 5)
+  
+  #both
+  
+  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlon) + ##convert OSM to ggplot2 format
+    #mpas
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "ÃŽle Verte"), ggplot2::aes(x = long, y = lat), col = "orange", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "Roche PercÃ©e et de la Baie des Tortues"), ggplot2::aes(x = long, y = lat), col = "orange", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id == "PoÃ©"), ggplot2::aes(x = long, y = lat), col = "orange", alpha = 0) + #mpa polygon in yellow
+    ggplot2::geom_polygon(data = subset(pa2, pa2$id =="Ouano"), ggplot2::aes(x = long, y = lat), col = "orange", alpha = 0) + #mpa polygon in yellow
+    #dugong obs
+    ggplot2::geom_point(data = telem, ggplot2::aes(x = lon, y = lat), size = 0.01, col = "white", alpha = 0.01) + #telem only
+    ggplot2::geom_point(data = telem_obs_inf_3, ggplot2::aes(x = lon, y = lat, color = "brown"), size = 1) +
+    ggplot2::geom_point(data = telem_obs_sup_3, ggplot2::aes(x = lon, y = lat, color = "pink"), size = 1) +
+    #ggplot2::theme_minimal() +
+    #limits on x and y axes
+    ggplot2::labs(size = "Indiv. / image") +
+    ggplot2::xlim(maplatlon$bbox$p1[1], maplatlon$bbox$p2[1]) +
+    ggplot2::ylim(maplatlon$bbox$p2[2], maplatlon$bbox$p1[2]) +
+    #scale
+    ggplot2::scale_color_manual(values = c("pink", "brown"), labels = c("1-3", "6-24"), name = "Indiv. / image") +
+    ggplot2::scale_y_continuous(breaks = c(-21.8, -21.6, -21.4, -21.2), expand = c(0, 0)) +
+    ggplot2::scale_x_continuous(breaks = c(165, 165.25, 165.5, 165.75), expand = c(0, 0)) +
+    ggplot2::theme(panel.background = ggplot2::element_blank(),
+                   axis.title = ggplot2::element_blank(),
+                   plot.title = ggplot2::element_text(hjust = 0.5)) 
+  
+  ggplot2::ggsave(here::here("outputs/map_indiv_dugong_per_image_telemetry_no_take_mpas_inf_sup_3.png"), map, width = 7, height = 5)
+  
+}
 
 
 #' Make map of telemetry with individual species observations with separate map per species
@@ -582,25 +881,29 @@ map_new_caledonia_big_mpas <- function(mpas, transects){
   # Use raster::getData("ISO3") to see codes
   new_caledonia <- raster::getData("GADM", country = "NCL", level = 1)
 
-  png(here::here("outputs", "map_new_caledonia_big_mpas.png"), width = 960, height = 960)
+  png(here::here("outputs", "map_new_caledonia_big_mpas.png"), width = 960, height = 800)
   plot(subset(mpas, mpas@data$NAME == "Lagoons of New Caledonia: Reef Diversity and Associated Ecosystems"), border = "dark blue", lwd = 2, 
-       xlim = c(164.8, 166), ylim = c(-21.9,-21.3))
-  plot(subset(mpas, mpas@data$NAME == "Parc de la Zone CÃ´tiÃ¨re Ouest"), add = T, border = "cyan", lwd = 2)
-  plot(subset(mpas, mpas@data$NAME == "ÃŽle Verte"), add = T, border = "orange", lwd = 2)
-  plot(subset(mpas, mpas@data$NAME == "PoÃ©"), add = T, border = "orange", lwd = 2)
-  plot(subset(mpas, mpas@data$NAME == "Roche PercÃ©e et de la Baie des Tortues" ), add = T, border = "orange", lwd = 2)
-  plot(subset(mpas, mpas@data$NAME == "Ouano" ), add = T, border = "orange", lwd = 2)
+       xlim = c(164.85, 165.85), ylim = c(-21.8,-21.4))
   plot(transects, add = T)
+  plot(subset(mpas, mpas@data$NAME == "Parc de la Zone CÃ´tiÃ¨re Ouest"), add = T, border = "cyan", lwd = 2)
+  plot(subset(mpas, mpas@data$NAME == "ÃŽle Verte"), add = T, border = "orange", lwd = 3)
+  plot(subset(mpas, mpas@data$NAME == "PoÃ©"), add = T, border = "orange", lwd = 3)
+  plot(subset(mpas, mpas@data$NAME == "Roche PercÃ©e et de la Baie des Tortues" ), add = T, border = "orange", lwd = 3)
+  plot(subset(mpas, mpas@data$NAME == "Ouano" ), add = T, border = "orange", lwd = 3)
+
   plot(new_caledonia, col ="#999999", border = "black", lwd = 1, cex = 2, add = T ) 
   box()
   #add arrow (can't change size)
   #cartography::north(pos = "bottomleft", col = "black")
   #add scalebar
-  raster::scalebar(30, type='bar', below = "Km", lonlat = TRUE, lwd = 30)
+  raster::scalebar(30, type='bar', below = "Km", lonlat = TRUE, cex = 1.5)
   #add text
-  raster::text(165.3,-21.8, label = "Lagoons of New Caledonia", col = "dark blue", cex = 1.8, font = 1)
-  raster::text(165.55,-21.9, label = "West coast parc", col = "cyan", cex = 1.8, font = 1)
-  raster::text(165.2,-21.7, label = "No-take mpas", col = "orange", cex = 1.8, font = 1)
+  raster::text(165.1,-21.7, label = "Lagoons of New Caledonia", col = "dark blue", cex = 2, font = 1)
+  raster::text(165.48,-21.94, label = "West coast provincial parc", col = "cyan", cex = 2, font = 1)
+  raster::text(165.4,-21.8, label = "No-take MPAs", col = "orange", cex = 2, font = 1)
+  #axes
+  axis(1, at = c(165, 165.4, 165.8), cex.axis = 1.6) 
+  axis(2, at = c(-21.4, -21.8), cex.axis = 1.6) 
   dev.off()
   
 }

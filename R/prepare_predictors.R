@@ -1,5 +1,31 @@
 
 
+
+#' Read seagrass New Caledonia from Andrefouet et al 2021 Marine Pollution Bulletin
+#'
+#'
+#' @return
+#' @export
+#'
+
+read_convert_seagrass_nc <- function(){
+  
+  # read shapefile
+  data = sf::st_read(dsn = "data/raw_data/seagrass_andrefouet/herbier-envelop-dissolve.shp", stringsAsFactors = FALSE)
+  
+  #project
+  data = sf::st_transform(data, sp::CRS("+init=epsg:3163")) #project to lambert NC
+  
+  #convert sf to spatialPolygonsDataFrame
+  sf_poly = sf:::as_Spatial(data)
+  
+  return(sf_poly)
+  
+}
+
+
+
+
 #' Read and convert New Caledonia Allen coral shapefile benthic
 #'
 #' @param lon1
@@ -57,6 +83,59 @@ read_convert_coral_geomorpho <- function(lon1, lon2, lat2, lat1){
 
 
 
+#' Make coral cover raster
+#'
+#' @param coralpoly
+#' @param ncraster
+#'
+#' @return
+#' @export
+#'
+
+make_coral_cover_raster <- function(coralpoly, ncraster){
+  
+  print("converting ...")
+  cor_sf = sf::st_as_sf(coralpoly)
+
+  #Filter reef
+  print("getting coverage ...")
+  cor_sf_reef = cor_sf %>% dplyr::filter(reef == 1)
+  
+  #create coral_cover raster 
+  r = raster::rasterize(cor_sf_reef, ncraster, getCover = T)
+  
+  names(r) = "coral_cover"
+  
+  return(r)
+  
+}
+
+
+
+
+
+# read csv file of reef passes (from Breckwood et al 2022: https://doi.pangaea.de/10.1594/PANGAEA.942568)
+
+read_passes <- function(){
+  
+  data = read.csv("data/raw_data/passes/Typology_reef_passages.csv")
+  
+  #select NEw caledonia
+  data = subset(data, data$Location == "Grande terre")
+  
+  #convert to spatial points
+  xy <- data[,c(2,3)]
+  
+  spdf <- sp::SpatialPointsDataFrame(coords = xy, data = data,
+                                     proj4string = sp::CRS("+proj=longlat +datum=WGS84 +ellps=WGS84 +towgs84=0,0,0"))
+  
+  return(spdf)
+  
+}
+
+
+
+
 
 #' Read New Caledonia Allen coral quaterly turbidity, produce average raster and resample
 #'
@@ -105,7 +184,7 @@ read_average_resample_turbidity <- function(lon1, lon2, lat2, lat1, rast){
 
 
 
-#' Make coverage raster for each habitat type
+#' Make coverage raster for each habitat type of Allen Atlas
 #'
 #' @param cor 
 #' @param r_xy 
@@ -148,7 +227,81 @@ make_raster_coral_benthic_type <- function(cor, r_xy, hab_type){
 
 
 
-#' Make distance to seagrass raster
+
+
+#' Make coverage raster for each geomorphology type of Millenium atlas
+#'
+#' @param cor 
+#' @param r_xy 
+#' @param geom_type 
+#'
+#' @return
+#' @export
+#'
+
+make_raster_coral_millenium_type <- function(coral, r_xy, geom_type){
+  
+  #crop to study area
+  coral = raster::crop(coral, r_xy)
+  
+  #Transforming to sf object
+  print("converting ...")
+  cor_sf = sf::st_as_sf(coral)
+  
+  #Renaming names that made problems
+  cor_sf$l4_attrib[cor_sf$l4_attrib == "deep lagoon"] <- "deep_lagoon_millenium"
+  cor_sf$l4_attrib[cor_sf$l4_attrib == "shallow terrace"] <- "shallow_terrace_millenium"
+  cor_sf$l4_attrib[cor_sf$l4_attrib == "forereef"] <- "forereef_millenium"
+  cor_sf$l4_attrib[cor_sf$l4_attrib == "reef flat"] <- "reefflat_millenium"
+  cor_sf$l4_attrib[cor_sf$l4_attrib == "intermediate reef flat"] <- "intermreefflat_millenium"
+  cor_sf$l4_attrib[cor_sf$l4_attrib == "diffuse fringing"] <- "diffusefringing_millenium"
+  cor_sf$l4_attrib[cor_sf$l4_attrib == "channel"] <- "channel_millenium"
+  
+  #Filter specific habitat
+  print("getting coverage ...")
+  cor_sf_habitat = cor_sf %>% dplyr::filter(l4_attrib == geom_type) %>% dplyr::select(l4_attrib)
+  
+  #Loop to get coverage per polygon
+  raster_loop <- foreach(i = 1:nrow(cor_sf_habitat)) %dopar% 
+    
+    #Calculate coverage for this value 
+    exactextractr::coverage_fraction(r_xy, cor_sf_habitat[i,], crop = TRUE)[[1]]
+  
+  #merge raster lists into unique raster
+  print("merging ...")
+  r_merged <- do.call(raster::merge, raster_loop)
+  
+  #rename
+  names(r_merged) <- tolower(geom_type)
+  
+  return(r_merged)
+  
+}
+
+
+#' Make coverage raster for seagrass
+#'
+#' @param seagrass 
+#' @param r_xy 
+#'
+#' @return
+#' @export
+#'
+
+make_raster_seagrass <- function(seagrass, r_xy){
+  
+  #Transforming to sf object
+  cor_sf = sf::st_as_sf(seagrass)
+    
+  #Calculate coverage for this value 
+  r = exactextractr::coverage_fraction(r_xy, cor_sf, crop = TRUE)
+
+  return(r[[1]])
+  
+}
+
+
+#' Make distance to seagrass raster OLD
 #'
 #' @param coral
 #' @param raster
@@ -157,7 +310,7 @@ make_raster_coral_benthic_type <- function(cor, r_xy, hab_type){
 #' @export
 #'
 
-make_dist_to_seagrass_raster <- function(cor, raster){
+make_dist_to_seagrass_raster_old <- function(cor, raster){
   
   # Extract polygon of seagrass from coral shapefil
   seagrass <- cor[cor@data$class ==  "Seagrass", ]
@@ -185,7 +338,78 @@ make_dist_to_seagrass_raster <- function(cor, raster){
 
 
 
-#' Make coverage raster for each geomorphology type
+
+#' Make distance to seagrass raster
+#'
+#' @param seag
+#' @param raster
+#'
+#' @return
+#' @export
+#'
+
+make_dist_to_seagrass_raster <- function(seag, rast){
+  
+  # Calculate distance of raster cells to seagrass 
+  cat('calculating distance \n')
+  pts = as(rast, "SpatialPoints")
+  #length(pts)
+  dd = rgeos::gDistance(seag, pts, byid=TRUE) #in m
+  # This creates a matrix with a column for each feature in seagrass
+  
+  #assign distances to points
+  pts2 = as(pts,"SpatialPointsDataFrame")
+  pts2@data <- data.frame(dd)
+  
+  #rasterize
+  t = raster::rasterize(pts2, rast_xy)
+  res <- t[["X1"]]
+  
+  # rename
+  names(res) = "dist_seagrass"
+  
+  return(res)
+  
+}
+
+
+
+#' Make distance to reef pass
+#'
+#' @param pass
+#' @param raster
+#'
+#' @return
+#' @export
+#'
+
+make_dist_to_pass_raster <- function(pass, raster){
+  
+  #project
+  pass = sp::spTransform(pass, sp::CRS("+init=epsg:3163")) #project to lambert NC
+  
+  # Calculate distance of raster cells to passes 
+  cat('calculating distance \n')
+  pts = as(raster, "SpatialPoints")
+  #length(pts)
+  dd = rgeos::gDistance(pass, pts, byid=TRUE)
+  # This creates a matrix with a column for each feature in seagrass
+  
+  # To get the nearest distance (meters) to any feature, apply min over rows:
+  raster[] = apply(dd, 1, min) #---------warning message
+  # raster::plot(raster)
+  
+  # rename
+  names(raster) = "dist_pass"
+  
+  return(raster)
+  
+}
+
+
+
+
+#' Make coverage raster for each geomorphology type of Allen Atlas
 #'
 #' @param cor 
 #' @param r_xy 
@@ -462,7 +686,7 @@ make_pop_density <- function(raster, lon1, lon2, lat1, lat2){
   ext <- raster::extent(lon1, lon2, lat2, lat1)
   r = raster::crop(r, ext)
   
-  # define 25x25 moving window
+  # define 5x5 moving window
   win = matrix(1,5,5)
   
   # focal mean over a 5x5 km moving window
@@ -555,6 +779,133 @@ make_dist_to_land_raster <- function(coral, raster){
 }
 
 
+
+
+
+
+#' Make distance to barrier reef raster
+#'
+#' @param coral
+#' @param raster
+#'
+#' @return
+#' @export
+#'
+
+make_dist_to_barrier_reef_raster <- function(coral, raster){
+  
+  # Extract polygon of main land from coral shapefil
+  coralland <- coral[coral@data$l4_attrib ==  "forereef", ]
+  
+  # Calculate distance of raster cells to main land 
+  cat('calculating distance \n')
+  pts = as(raster, "SpatialPoints")
+  length(pts)
+  dd = rgeos::gDistance(coralland, pts, byid=TRUE)
+  # This creates a matrix with a column for each feature in coralland
+  
+  # To get the nearest distance (meters) to any feature, apply min over rows:
+  raster[] = apply(dd, 1, min) #---------warning message
+  # raster::plot(raster)
+  
+  # rename
+  names(raster) = "dist_barrier_reef"
+  
+  return(raster)
+  
+}
+
+
+
+
+
+
+#' Make distance to intermediate reef raster
+#'
+#' @param coral
+#' @param raster
+#'
+#' @return
+#' @export
+#'
+
+make_dist_to_intermediate_reef_raster <- function(coral, raster){
+  
+  # Extract polygon of main land from coral shapefil
+  coralland <- coral[coral@data$l4_attrib ==  "intermediate reef flat", ]
+  
+  # Calculate distance of raster cells to main land 
+  cat('calculating distance \n')
+  pts = as(raster, "SpatialPoints")
+  length(pts)
+  dd = rgeos::gDistance(coralland, pts, byid=TRUE)
+  # This creates a matrix with a column for each feature in coralland
+  
+  # To get the nearest distance (meters) to any feature, apply min over rows:
+  raster[] = apply(dd, 1, min) #---------warning message
+  # raster::plot(raster)
+  
+  # rename
+  names(raster) = "dist_intermediate_reef"
+  
+  return(raster)
+  
+}
+
+
+
+
+
+
+
+#' Make distance to all reef raster
+#'
+#' @param coral
+#' @param raster
+#'
+#' @return
+#' @export
+#'
+
+make_dist_to_all_reef_raster <- function(coral, raster){
+  
+  # Extract polygon of main land from coral shapefil
+  coralland <- coral[coral@data$l4_attrib %in% c("intermediate reef flat",
+                                                 # "deep terrace with constructions",
+                                                 # "enclosed lagoon with constructions",
+                                                 "forereef"),]
+                                                 # "forereef or terrace",
+                                                 # "pass reef flat",
+                                                 # "reef flat",
+                                                 # "shallow terrace with constructions",
+                                                 # "subtidal reef flat"), ]
+  
+  #aggregate into one feature
+  coralland2 = raster::aggregate(coralland, dissolve=T)
+  
+  # Calculate distance of raster cells to main land 
+  cat('calculating distance \n')
+  pts = as(raster, "SpatialPoints")
+  length(pts)
+  dd = rgeos::gDistance(coralland2, pts, byid=TRUE)
+  # This creates a matrix with a column for each feature in coralland
+  
+  #assign distances to points
+  pts2 = as(pts,"SpatialPointsDataFrame")
+  pts2@data <- data.frame(dd)
+  
+  #rasterize
+  t = raster::rasterize(pts2, raster)
+  res <- t[["X1"]]
+  
+  # rename
+  names(res) = "dist_all_reef"
+  
+  return(res)
+  
+}
+
+
 #' Map distance to land raster
 #'
 #' @param raster
@@ -571,6 +922,82 @@ map_dist_to_land <- function(raster){
   
 }
 
+
+
+
+
+#' Map coral cover raster
+#'
+#' @param raster
+#'
+#' @return
+#' @export
+#'
+
+map_coral_cover <- function(raster){
+  
+  png(here::here("outputs", "predictors", "map_coral_cover.png"), width = 960, height = 480)
+  raster::plot(raster, main = "distance (m)")
+  dev.off()
+  
+}
+
+
+
+
+
+#' Map distance to intermediate reef raster
+#'
+#' @param raster
+#'
+#' @return
+#' @export
+#'
+
+map_dist_to_intermediate_reef <- function(raster){
+  
+  png(here::here("outputs", "predictors", "map_dist_to_intermediate_reef.png"), width = 960, height = 480)
+  raster::plot(raster, main = "distance (m)")
+  dev.off()
+  
+}
+
+
+
+#' Map distance to all reef raster
+#'
+#' @param raster
+#'
+#' @return
+#' @export
+#'
+
+map_dist_to_all_reef <- function(raster){
+  
+  png(here::here("outputs", "predictors", "map_dist_to_all_reef.png"), width = 960, height = 480)
+  raster::plot(raster, main = "distance (m)")
+  dev.off()
+  
+}
+
+
+
+
+#' Map distance to barrier reef raster
+#'
+#' @param raster
+#'
+#' @return
+#' @export
+#'
+
+map_dist_to_barrier_reef <- function(raster){
+  
+  png(here::here("outputs", "predictors", "map_dist_to_barrier_reef.png"), width = 960, height = 480)
+  raster::plot(raster, main = "distance (m)")
+  dev.off()
+  
+}
 
 
 
@@ -637,6 +1064,23 @@ map_dist_to_reef <- function(raster){
 map_dist_to_seagrass <- function(raster){
   
   png(here::here("outputs", "predictors", "map_dist_to_seagrass.png"), width = 960, height = 480)
+  raster::plot(raster, main = "distance (m)")
+  dev.off()
+  
+}
+
+
+#' Map distance to pass raster
+#'
+#' @param raster
+#'
+#' @return
+#' @export
+#'
+
+map_dist_to_passes <- function(raster){
+  
+  png(here::here("outputs", "predictors", "map_dist_to_passes.png"), width = 960, height = 480)
   raster::plot(raster, main = "distance (m)")
   dev.off()
   
@@ -936,14 +1380,14 @@ map_mpa_pres <- function(raster){
 
 
 
-#' read depth from Jean roger (IRD) and resample to study area
+#' read depth from Jean roger (IRD), median and resample to study area
 #'
 #' @param rast 
 #'
 #' @return
 #' @export
 
-read_resample_depth <- function(rastlatlon, rastxy){
+read_median_depth <- function(rastlatlon, rastxy){
   
   depth = raster::raster(here::here("data", "raw_data", "Bathy", "MNT-nettoyé_v3_FINAL.tif"))
   
@@ -953,8 +1397,11 @@ read_resample_depth <- function(rastlatlon, rastxy){
   #project
   depthproj = raster::projectRaster(depthcrop, crs = "+init=epsg:3163") #project to lambert NC
   
+  #aggregate
+  depth_mean = raster::aggregate(depthproj, fact = 3, median)
+  
   # resample depth raster with study area raster
-  depthnew = raster::resample(depthproj, rastxy)
+  depthnew = raster::resample(depth_mean, rastxy)
   
   names(depthnew) = "depth"
   
@@ -962,6 +1409,39 @@ read_resample_depth <- function(rastlatlon, rastxy){
 }
 
  
+
+
+
+
+
+
+
+
+
+#' Calculate median slope from median depth
+#'
+#' @param dep 
+#'
+#' @return
+#' @export
+#'
+
+calculate_median_slope <- function(dep){
+
+  slope = raster::terrain(dep, opt="slope", unit="degrees", neighbors=4)  
+  # When neighbors=4, slope and aspect are computed according to Fleming and Hoffer (1979) and Ritter (1987). 
+  # When neigbors=8, slope and aspect are computed according to Horn (1981). The Horn algorithm may be best for 
+  # rough surfaces, and the Fleming and Hoffer algorithm may be better for smoother surfaces (Jones, 1997; Burrough and McDonnell, 1998). 
+
+}
+
+
+
+
+
+
+
+
 
 
 #' Map depth
@@ -976,6 +1456,18 @@ map_depth <- function(dep){
   
 }  
   
+
+#' Map slope
+#'
+#' @param dep
+
+map_slope <- function(dep){
+  
+  png(here::here("outputs", "predictors", "map_slope.png"), width = 960, height = 480)
+  raster::plot(dep)
+  dev.off()
+  
+}  
 
 
 #' Extend rasters based on defined study area raster
@@ -1015,5 +1507,27 @@ mask_with_land <- function(r, mask){
   return(rnew)
 
 }
+
+
+
+
+
+#' Mask based on dist to mainland raster
+#'
+#' @param r 
+#' @param mask 
+#'
+#' @return
+#' @export
+#'
+
+mask_with_land2 <- function(r, mask){
+  
+  rnew = raster::mask(r, mask)
+  
+  return(rnew)
+  
+}
+
 
 

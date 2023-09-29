@@ -1,0 +1,45 @@
+
+Family: Tweedie(p=1.388) 
+Link function: log 
+
+Formula:
+abundance ~ s(rubble, k = 5) + s(coral_algae, k = 5) + s(microalgal_mats, 
+    k = 5) + s(seagrass, k = 5) + s(sand, k = 5) + s(rock, k = 5) + 
+    s(back_reef_slope, k = 5) + s(deep_lagoon, k = 5) + s(inner_reef_flat, 
+    k = 5) + s(outer_reef_flat, k = 5) + s(plateau, k = 5) + 
+    s(reef_crest, k = 5) + s(reef_slope, k = 5) + s(shallow_lagoon, 
+    k = 5) + s(turbidity, k = 5) + s(travel_time, k = 5) + s(dist_reef, 
+    k = 5) + s(depth, k = 5) + s(dist_seagrass, k = 5) + offset(log(area_surveyed_m2))
+
+Parametric coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept) -15.4421     0.4595  -33.61   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+                         edf Ref.df     F  p-value    
+s(rubble)          8.485e-05      4 0.000 0.549339    
+s(coral_algae)     7.283e-01      4 0.441 0.117382    
+s(microalgal_mats) 5.604e-05      4 0.000 0.786963    
+s(seagrass)        7.712e-05      4 0.000 0.731656    
+s(sand)            5.638e-05      4 0.000 0.752978    
+s(rock)            9.129e-01      4 0.340 0.216473    
+s(back_reef_slope) 4.839e-01      4 0.185 0.213556    
+s(deep_lagoon)     1.795e+00      4 2.071 0.008285 ** 
+s(inner_reef_flat) 3.520e-05      4 0.000 0.828745    
+s(outer_reef_flat) 6.781e-01      4 0.324 0.140519    
+s(plateau)         2.443e-05      4 0.000 0.967365    
+s(reef_crest)      1.847e-05      4 0.000 0.670780    
+s(reef_slope)      1.339e+00      4 1.090 0.037248 *  
+s(shallow_lagoon)  7.883e-01      4 0.820 0.040875 *  
+s(turbidity)       9.281e-01      4 2.978 0.000292 ***
+s(travel_time)     7.622e-05      4 0.000 0.505506    
+s(dist_reef)       1.071e-03      4 0.000 0.262630    
+s(depth)           1.887e+00      4 1.398 0.040118 *  
+s(dist_seagrass)   2.769e+00      4 4.685 0.000169 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.139   Deviance explained = 47.7%
+-REML = 255.82  Scale est. = 11.453    n = 1806

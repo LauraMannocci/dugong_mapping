@@ -2,7 +2,7 @@
 % Please edit documentation in R/prepare_predictors.R
 \name{make_raster_coral_geomorpho_type}
 \alias{make_raster_coral_geomorpho_type}
-\title{Make coverage raster for each geomorphology type}
+\title{Make coverage raster for each geomorphology type of Allen Atlas}
 \usage{
 make_raster_coral_geomorpho_type(cor, r_xy, geom_type)
 }
@@ -14,5 +14,5 @@ make_raster_coral_geomorpho_type(cor, r_xy, geom_type)
 \item{geom_type}{}
 }
 \description{
-Make coverage raster for each geomorphology type
+Make coverage raster for each geomorphology type of Allen Atlas
 }

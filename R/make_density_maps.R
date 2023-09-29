@@ -339,19 +339,19 @@ map_obs_per_grid_per_date_species <- function(maplatlonproj, polygon, species, s
   ggplot2::ggsave(here::here(paste0("outputs/map_obs_per_grid_per_date_", species, "1.png")), map, width = 8, height = 6)
   
   #map2
-  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlonproj) + ##convert OSM to ggplot2 format
-    ggplot2::geom_point(data = subset(counts, counts$date %in% dates[4:7]), ggplot2::aes(x = lon, y = lat, color = count), shape = 15, size=size, alpha = 0.85) +
-    ggplot2::facet_wrap(~date, nrow = 2, ncol = 2) +
-    ggplot2::ggtitle(species) +
-    ggplot2::theme(axis.title = ggplot2::element_blank(),
-                   axis.text = ggplot2::element_blank(),
-                   axis.ticks = ggplot2::element_blank(),
-                   plot.title = ggplot2::element_text(hjust = 0.5)) +
-    ggplot2::scale_color_gradient(low = "dark grey", high = "red", na.value = NA,
-                                  name = "individuals")
-  
-  ggplot2::ggsave(here::here(paste0("outputs/map_obs_per_grid_per_date_", species, "2.png")), map, width = 8, height = 6)
-  
+  # map = OpenStreetMap::autoplot.OpenStreetMap(maplatlonproj) + ##convert OSM to ggplot2 format
+  #   ggplot2::geom_point(data = subset(counts, counts$date %in% dates[4:7]), ggplot2::aes(x = lon, y = lat, color = count), shape = 15, size=size, alpha = 0.85) +
+  #   ggplot2::facet_wrap(~date, nrow = 2, ncol = 2) +
+  #   ggplot2::ggtitle(species) +
+  #   ggplot2::theme(axis.title = ggplot2::element_blank(),
+  #                  axis.text = ggplot2::element_blank(),
+  #                  axis.ticks = ggplot2::element_blank(),
+  #                  plot.title = ggplot2::element_text(hjust = 0.5)) +
+  #   ggplot2::scale_color_gradient(low = "dark grey", high = "red", na.value = NA,
+  #                                 name = "individuals")
+  # 
+  # ggplot2::ggsave(here::here(paste0("outputs/map_obs_per_grid_per_date_", species, "2.png")), map, width = 8, height = 6)
+  # 
 }
 
 
@@ -421,21 +421,21 @@ map_obs_per_grid_per_date_species_with_zero <- function(maplatlonproj, polygon, 
   ggplot2::ggsave(here::here(paste0("outputs/map_obs_per_grid_per_date_", species, "_with_zero_1.png")), map, width = 8, height = 6)
   
   #map2
-  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlonproj) + ##convert OSM to ggplot2 format
-    #add cells were there were tracks with no observations (ie zeros)
-    ggplot2::geom_point(data = subset(effort2, effort2$date %in% dates[4:7]), ggplot2::aes(x = lon, y = lat), color = "white", shape = 15, size = size, alpha = 0.4) +
-    ggplot2::geom_point(data = subset(counts, counts$date %in% dates[4:7]), ggplot2::aes(x = lon, y = lat, color = count), shape = 15, size=size, alpha = 1) +
-    ggplot2::facet_wrap(~date, nrow = 2, ncol = 2) +
-    ggplot2::ggtitle(species) +
-    ggplot2::theme(axis.title = ggplot2::element_blank(),
-                   axis.text = ggplot2::element_blank(),
-                   axis.ticks = ggplot2::element_blank(),
-                   plot.title = ggplot2::element_text(hjust = 0.5)) +
-    ggplot2::scale_color_gradient(low = "bisque1", high = "red3", na.value = NA,
-                                  name = "individuals")
-  
-  ggplot2::ggsave(here::here(paste0("outputs/map_obs_per_grid_per_date_", species, "_with_zero_2.png")), map, width = 8, height = 6)
-  
+  # map = OpenStreetMap::autoplot.OpenStreetMap(maplatlonproj) + ##convert OSM to ggplot2 format
+  #   #add cells were there were tracks with no observations (ie zeros)
+  #   ggplot2::geom_point(data = subset(effort2, effort2$date %in% dates[4:7]), ggplot2::aes(x = lon, y = lat), color = "white", shape = 15, size = size, alpha = 0.4) +
+  #   ggplot2::geom_point(data = subset(counts, counts$date %in% dates[4:7]), ggplot2::aes(x = lon, y = lat, color = count), shape = 15, size=size, alpha = 1) +
+  #   ggplot2::facet_wrap(~date, nrow = 2, ncol = 2) +
+  #   ggplot2::ggtitle(species) +
+  #   ggplot2::theme(axis.title = ggplot2::element_blank(),
+  #                  axis.text = ggplot2::element_blank(),
+  #                  axis.ticks = ggplot2::element_blank(),
+  #                  plot.title = ggplot2::element_text(hjust = 0.5)) +
+  #   ggplot2::scale_color_gradient(low = "bisque1", high = "red3", na.value = NA,
+  #                                 name = "individuals")
+  # 
+  # ggplot2::ggsave(here::here(paste0("outputs/map_obs_per_grid_per_date_", species, "_with_zero_2.png")), map, width = 8, height = 6)
+  # 
 }
 
 
@@ -545,15 +545,16 @@ map_obs_per_grid_species_with_zero <- function(maplatlonproj, polygon, polytrack
     ggplot2::geom_point(data = counts2, ggplot2::aes(x = lon, y = lat, color = tot_count), shape = 15, size = size, alpha = 1) +
     #ggplot2::theme_minimal() +
     # ggplot2::ggtitle(species) +
+    #axes set manually
+    ggplot2::scale_y_continuous(breaks = c(332000,309000,288000,266000), labels = c("-21.2", "-21.4", "-21.6", "-21.8"), expand = c(0, 0)) +
+    ggplot2::scale_x_continuous(breaks = c(295000,330000,360000), labels = c("165.0", "165.3", "165.6"), expand = c(0, 0)) +
     ggplot2::theme(axis.title = ggplot2::element_blank(),
-                   axis.text = ggplot2::element_blank(),
-                   axis.ticks = ggplot2::element_blank(),
                    legend.justification = "left",
                    legend.box.spacing = grid::unit(0, "pt"),
                    panel.background = ggplot2::element_blank()) +
     ggplot2::scale_color_gradient(low = "bisque1", high = "red3", na.value = NA,
                                   # name = stringr::str_wrap("Dugong / 0.25 km2", width = 10))
-                                  name = 'Dugongs')
+                                  name = 'Individuals')
   
   ggplot2::ggsave(here::here(paste0("outputs/map_obs_per_grid_", species, "_with_zero.png")), map, width = 7, height = 5)
   
@@ -631,18 +632,18 @@ map_dens_per_grid_per_date_species <- function(maplatlonproj, polyobs, polytrack
   ggplot2::ggsave(here::here(paste0("outputs/map_dens_per_grid_per_date_", species, "1.png")), map, width = 7, height = 5)
   
   #map2
-  map = OpenStreetMap::autoplot.OpenStreetMap(maplatlonproj) + ##convert OSM to ggplot2 format
-    ggplot2::geom_point(data = subset(result, result$date %in% dates[4:7]), ggplot2::aes(x = lon, y = lat, color = density), shape = 15, size = size, alpha = 0.85) +
-    ggplot2::facet_wrap(~date, nrow = 2, ncol = 2) +
-    ggplot2::ggtitle(species) +
-    ggplot2::theme(axis.title = ggplot2::element_blank(),
-                   axis.text = ggplot2::element_blank(),
-                   axis.ticks = ggplot2::element_blank(),
-                   plot.title = ggplot2::element_text(hjust = 0.5)) +
-    ggplot2::scale_color_gradient(low = "dark grey", high = "red", na.value = NA,
-                                  name = "indiv/0.1km2") #ie 10000m2
-  
-  ggplot2::ggsave(here::here(paste0("outputs/map_dens_per_grid_per_date_", species, "2.png")), map, width = 7, height = 5)
+  # map = OpenStreetMap::autoplot.OpenStreetMap(maplatlonproj) + ##convert OSM to ggplot2 format
+  #   ggplot2::geom_point(data = subset(result, result$date %in% dates[4:7]), ggplot2::aes(x = lon, y = lat, color = density), shape = 15, size = size, alpha = 0.85) +
+  #   ggplot2::facet_wrap(~date, nrow = 2, ncol = 2) +
+  #   ggplot2::ggtitle(species) +
+  #   ggplot2::theme(axis.title = ggplot2::element_blank(),
+  #                  axis.text = ggplot2::element_blank(),
+  #                  axis.ticks = ggplot2::element_blank(),
+  #                  plot.title = ggplot2::element_text(hjust = 0.5)) +
+  #   ggplot2::scale_color_gradient(low = "dark grey", high = "red", na.value = NA,
+  #                                 name = "indiv/0.1km2") #ie 10000m2
+  # 
+  # ggplot2::ggsave(here::here(paste0("outputs/map_dens_per_grid_per_date_", species, "2.png")), map, width = 7, height = 5)
     
   
 }
@@ -892,9 +893,10 @@ map_surveyed_area_per_grid_species_with_zeros <- function(maplatlonproj, raster_
   map = OpenStreetMap::autoplot.OpenStreetMap(maplatlonproj) + ##convert OSM to ggplot2 format and add merged results
     ggplot2::geom_point(data = dat, ggplot2::aes(x = x, y = y, color = area_surveyed_m2), shape = 15, size = size, alpha = 0.9) +
     #ggplot2::theme_minimal() +
+    #axes set manually
+    ggplot2::scale_y_continuous(breaks = c(332000,309000,288000,266000), labels = c("-21.2", "-21.4", "-21.6", "-21.8"), expand = c(0, 0)) +
+    ggplot2::scale_x_continuous(breaks = c(295000,330000,360000), labels = c("165.0", "165.3", "165.6"), expand = c(0, 0)) +
     ggplot2::theme(axis.title = ggplot2::element_blank(),
-                   axis.text = ggplot2::element_blank(),
-                   axis.ticks = ggplot2::element_blank(),
                    legend.justification = "left",
                    legend.box.spacing = grid::unit(0, "pt"),
                    plot.title = ggplot2::element_text(hjust = 0.5, size = 18),

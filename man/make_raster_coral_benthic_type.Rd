@@ -2,7 +2,7 @@
 % Please edit documentation in R/prepare_predictors.R
 \name{make_raster_coral_benthic_type}
 \alias{make_raster_coral_benthic_type}
-\title{Make coverage raster for each habitat type}
+\title{Make coverage raster for each habitat type of Allen Atlas}
 \usage{
 make_raster_coral_benthic_type(cor, r_xy, hab_type)
 }
@@ -12,5 +12,5 @@ make_raster_coral_benthic_type(cor, r_xy, hab_type)
 \item{r_xy}{}
 }
 \description{
-Make coverage raster for each habitat type
+Make coverage raster for each habitat type of Allen Atlas
 }

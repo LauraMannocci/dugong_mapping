@@ -29,7 +29,7 @@ maplatlon = osm_map(lat1, lon1, lat2, lon2)
 
 
 
-######################################## DISTANCE TO MAINLAND ########################################
+######################################## DISTANCE TO MAINLAND (MILLENIUM) ########################################
 
 # Read New Caledonia coral shapefile (for distances computation)
 coral_millenium = read_original_coralnc_millenium()
@@ -433,13 +433,185 @@ raster::writeRaster(dist_reef, here::here("data", "processed_data", "predictors"
 
 
 
-######################################## DISTANCE TO SEAGRASS ########################################
+######################################## DISTANCE TO REEF PASSES (Breckwood et al 2022)########################################
 
+#read reef passes (from Breckwood et al 2022: https://doi.pangaea.de/10.1594/PANGAEA.942568)
+passes = read_passes()
 
-# Make distance to seagrass raster 
-dist_seagrass = make_dist_to_seagrass_raster(coral, rast_xy)
+# Make distance to pass raster 
+dist_passes = make_dist_to_pass_raster(passes, rast_xy)
 
 # mask based on dist to mainland raster
+dist_passes = mask_with_land(dist_passes, dist_land)
+
+# Map distance to passes raster
+map_dist_to_passes(dist_passes)
+
+# write raster
+raster::writeRaster(dist_passes, here::here("data", "processed_data", "predictors", "dist_passes.grd"), overwrite=TRUE)
+
+
+
+
+######################################## DISTANCE TO BARRIER REEF (MILLENIUM)########################################
+
+# Make distance to barrier reef raster
+dist_barrier_reef = make_dist_to_barrier_reef_raster(coral_millenium, rast_xy)
+
+# mask based on dist to mainland raster
+dist_barrier_reef = mask_with_land(dist_barrier_reef, dist_land)
+
+# Map distance to mainland raster
+map_dist_to_barrier_reef(dist_barrier_reef)
+
+# write raster
+raster::writeRaster(dist_barrier_reef, here::here("data", "processed_data", "predictors", "dist_barrier_reef.grd"), overwrite=TRUE)
+
+
+
+
+
+######################################## DISTANCE TO INTERMEDIATE REEF PATCH (MILLENIUM)########################################
+
+
+# Make distance to mainland raster
+dist_intermediate_reef = make_dist_to_intermediate_reef_raster(coral_millenium, rast_xy)
+
+# mask based on dist to mainland raster
+dist_intermediate_reef = mask_with_land(dist_intermediate_reef, dist_land)
+
+# Map distance to mainland raster
+map_dist_to_intermediate_reef(dist_intermediate_reef)
+
+# write raster
+raster::writeRaster(dist_intermediate_reef, here::here("data", "processed_data", "predictors", "dist_intermediate_reef.grd"), overwrite=TRUE)
+
+
+
+##################################### PERCENT COVERAGE DEEP LAGOON (MILLENIUM)##################################### 
+
+
+
+#setup parallel processing
+
+library(foreach)
+library(raster)
+
+#1-create the cluster
+my.cluster <- parallel::makeCluster(
+  parallel::detectCores() - 1,
+  type = "PSOCK")
+
+#2-register it to be used by %dopar%
+doParallel::registerDoParallel(cl = my.cluster)
+
+#make coverage raster for each habitat type
+percent_deep_lagoon_millenium = make_raster_coral_millenium_type(coral_millenium, rast_xy, "deep_lagoon_millenium")
+
+#extend all rasters to study area raster
+percent_deep_lagoon_millenium = extend_raster(percent_deep_lagoon_millenium, rast_xy)
+
+# mask based on dist to mainland raster
+percent_deep_lagoon_millenium = mask_with_land(percent_deep_lagoon_millenium, dist_land)
+
+
+# assign zeros where habitat/geomorpho type is absent based on coral_cover raster
+percent_deep_lagoon_millenium = assign_zeros_where_absent_type(percent_deep_lagoon_millenium, coral_cover) 
+
+
+#map                
+map_coral_habitat(percent_deep_lagoon_millenium, "percent_deep_lagoon_millenium")
+
+
+#write rasters 
+names(percent_deep_lagoon_millenium) <- "deep_lagoon_millenium"
+raster::writeRaster(percent_deep_lagoon_millenium, here::here("data", "processed_data", "predictors", "percent_deep_lagoon_millenium.grd"), overwrite=TRUE)
+
+
+
+
+##################################### PERCENT COVERAGE SHALLOW TERRACE (MILLENIUM)##################################### 
+
+
+
+#setup parallel processing
+
+library(foreach)
+library(raster)
+
+#1-create the cluster
+my.cluster <- parallel::makeCluster(
+  parallel::detectCores() - 1,
+  type = "PSOCK")
+
+#2-register it to be used by %dopar%
+doParallel::registerDoParallel(cl = my.cluster)
+
+#make coverage raster for each habitat type
+percent_shallow_terrace_millenium = make_raster_coral_millenium_type(coral_millenium, rast_xy, "shallow_terrace_millenium")
+
+#extend all rasters to study area raster
+percent_shallow_terrace_millenium = extend_raster(percent_shallow_terrace_millenium, rast_xy)
+
+# mask based on dist to mainland raster
+percent_shallow_terrace_millenium = mask_with_land(percent_shallow_terrace_millenium, dist_land)
+
+
+# assign zeros where habitat/geomorpho type is absent based on coral_cover raster
+percent_shallow_terrace_millenium = assign_zeros_where_absent_type(percent_shallow_terrace_millenium, coral_cover) 
+
+
+#map                
+map_coral_habitat(percent_shallow_terrace_millenium, "percent_shallow_terrace_millenium")
+
+
+#write rasters 
+names(percent_shallow_terrace_millenium) <- "shallow_terrace_millenium"
+raster::writeRaster(percent_shallow_terrace_millenium, here::here("data", "processed_data", "predictors", "percent_shallow_terrace_millenium.grd"), overwrite=TRUE)
+
+
+
+
+##################################### PERCENT COVERAGE SEAGRASS (ANDREFOUET) ##################################### 
+
+
+
+# Read seagrass shapefile 
+seagrass_shp = read_convert_seagrass_nc()
+
+
+#make coverage raster 
+percent_seagrass = make_raster_seagrass(seagrass_shp, rast_xy)
+
+#extend all rasters to study area raster
+percent_seagrass = extend_raster(percent_seagrass, rast_xy)
+
+# mask based on dist to mainland raster
+percent_seagrass = mask_with_land(percent_seagrass, dist_land)
+
+# assign zeros where habitat/geomorpho type is absent based on coral_cover raster
+percent_seagrass = assign_zeros_where_absent_type(percent_seagrass, coral_cover) 
+
+
+#map                
+map_coral_habitat(percent_seagrass, "percent_seagrass")
+
+
+#write rasters 
+names(percent_seagrass) <- "seagrass"
+raster::writeRaster(percent_seagrass, here::here("data", "processed_data", "predictors", "percent_seagrass.grd"), overwrite=TRUE)
+
+
+
+
+
+
+######################################## DISTANCE TO SEAGRASS (ANDREFOUET) ########################################
+
+# Make distance to seagrass raster (meters)
+dist_seagrass <- make_dist_to_seagrass_raster(seagrass_shp, rast_xy)
+
+# mask to remove land
 dist_seagrass = mask_with_land(dist_seagrass, dist_land)
 
 # Map distance to seagrass raster
@@ -447,7 +619,4 @@ map_dist_to_seagrass(dist_seagrass)
 
 # write raster
 raster::writeRaster(dist_seagrass, here::here("data", "processed_data", "predictors", "dist_seagrass.grd"), overwrite=TRUE)
-
-
-
 

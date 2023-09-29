@@ -3,7 +3,6 @@
 \name{fit_full_abundance_model_k5}
 \alias{fit_full_abundance_model_k5}
 \title{fit full abudance GAM with area surveyed as offset and
-automated term selection thanks to select = T (https://stats.stackexchange.com/questions/405129/model-selection-for-gam-in-r)
 with k limited to 5}
 \usage{
 fit_full_abundance_model_k5(distrib, data_model)
@@ -13,6 +12,5 @@ fit_full_abundance_model_k5(distrib, data_model)
 }
 \description{
 fit full abudance GAM with area surveyed as offset and
-automated term selection thanks to select = T (https://stats.stackexchange.com/questions/405129/model-selection-for-gam-in-r)
 with k limited to 5
 }
