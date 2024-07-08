@@ -1,0 +1,15 @@
+|==================================                                                                                        | 29% ~0 s remaining     |====================================================                                                                      | 43% ~0 s remaining     |=====================================================================                                                     | 57% ~0 s remaining     |=======================================================================================                                   | 71% ~0 s remaining     |========================================================================================================                  | 86% ~0 s remaining     |==========================================================================================================================|100% ~0 s remaining     
+
+Extrapolation   Minimum                               n_min   Maximum                                n_max
+--------------  ------------------------------------  ------  ------------------------------------  ------
+Univariate      seagrass_coverage                     0       dist_pass, depth                         293
+                -                                     -       dist_pass, depth, seagrass_coverage      293
+Combinatorial   dist_pass                             0       dist_pass                                  0
+                depth                                 0       depth                                      0
+                seagrass_coverage                     0       seagrass_coverage                          0
+                dist_pass, depth                      0       dist_pass, depth                           0
+                dist_pass, seagrass_coverage          0       dist_pass, seagrass_coverage               0
+                depth, seagrass_coverage              0       depth, seagrass_coverage                   0
+                dist_pass, depth, seagrass_coverage   0       dist_pass, depth, seagrass_coverage        0
+Both            seagrass_coverage                     0       dist_pass, depth                         293
+                -                                     -       dist_pass, depth, seagrass_coverage      293

@@ -1,0 +1,29 @@
+
+Family: Tweedie(p=1.4) 
+Link function: log 
+
+Formula:
+abundance ~ s(dist_seagrass) + s(dist_pass) + s(dist_all_reef) + 
+    s(deep_lagoon_coverage) + s(reefflat_coverage) + s(depth) + 
+    s(seagrass_coverage) + offset(log(area_surveyed_m2))
+
+Parametric coefficients:
+            Estimate Std. Error t value Pr(>|t|)    
+(Intercept) -15.4169     0.8069  -19.11   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+                          edf Ref.df     F p-value   
+s(dist_seagrass)        3.983  4.925 1.404 0.19347   
+s(dist_pass)            1.002  1.003 9.630 0.00192 **
+s(dist_all_reef)        1.620  2.022 0.483 0.62919   
+s(deep_lagoon_coverage) 1.100  1.189 0.087 0.79558   
+s(reefflat_coverage)    1.000  1.000 1.220 0.26948   
+s(depth)                3.145  3.889 2.624 0.03226 * 
+s(seagrass_coverage)    1.000  1.000 0.983 0.32153   
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.127   Deviance explained = 49.1%
+-REML = 170.53  Scale est. = 13.958    n = 1639

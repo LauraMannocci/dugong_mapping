@@ -1,0 +1,29 @@
+
+Family: Negative Binomial(0.016) 
+Link function: log 
+
+Formula:
+abundance ~ s(dist_seagrass) + s(dist_pass) + s(dist_all_reef) + 
+    s(deep_lagoon_coverage) + s(reefflat_coverage) + s(depth) + 
+    s(seagrass_coverage) + offset(log(area_surveyed_m2))
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -15.0803     0.7073  -21.32   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+                          edf Ref.df Chi.sq p-value   
+s(dist_seagrass)        1.001  1.002  0.790  0.3751   
+s(dist_pass)            1.000  1.000  8.154  0.0043 **
+s(dist_all_reef)        1.448  1.773  1.008  0.6440   
+s(deep_lagoon_coverage) 1.000  1.000  1.172  0.2789   
+s(reefflat_coverage)    1.000  1.000  2.434  0.1187   
+s(depth)                2.591  3.236  5.100  0.1784   
+s(seagrass_coverage)    1.000  1.000  1.463  0.2265   
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0319   Deviance explained = 42.9%
+-REML = 165.57  Scale est. = 1         n = 1639

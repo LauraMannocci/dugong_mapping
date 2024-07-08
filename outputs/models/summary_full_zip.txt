@@ -1,0 +1,29 @@
+
+Family: Zero inflated Poisson(-3.632,0.423) 
+Link function: identity 
+
+Formula:
+abundance_round ~ s(dist_seagrass) + s(dist_pass) + s(dist_all_reef) + 
+    s(deep_lagoon_coverage) + s(reefflat_coverage) + s(depth) + 
+    s(seagrass_coverage) + offset(log(area_surveyed_m2))
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -12.9304     0.5884  -21.98   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+                          edf Ref.df Chi.sq  p-value    
+s(dist_seagrass)        5.308  6.373 28.371 0.000121 ***
+s(dist_pass)            2.836  3.529 52.433  < 2e-16 ***
+s(dist_all_reef)        6.016  7.095 57.233  < 2e-16 ***
+s(deep_lagoon_coverage) 3.425  4.107 92.134  < 2e-16 ***
+s(reefflat_coverage)    1.000  1.000  0.956 0.328245    
+s(depth)                2.618  3.304  4.788 0.159541    
+s(seagrass_coverage)    2.000  2.358 19.196 0.000174 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Deviance explained = 89.8%
+-REML = 171.13  Scale est. = 1         n = 1639

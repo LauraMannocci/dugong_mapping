@@ -1,0 +1,24 @@
+
+Family: Negative Binomial(0.017) 
+Link function: log 
+
+Formula:
+abundance ~ s(dist_pass) + s(depth) + s(seagrass_coverage) + 
+    offset(log(area_surveyed_m2))
+
+Parametric coefficients:
+            Estimate Std. Error z value Pr(>|z|)    
+(Intercept) -14.8709     0.7751  -19.18   <2e-16 ***
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+Approximate significance of smooth terms:
+                       edf Ref.df Chi.sq p-value   
+s(dist_pass)         1.000  1.000  6.687 0.00972 **
+s(depth)             2.868  3.538 10.357 0.02115 * 
+s(seagrass_coverage) 1.000  1.000  4.589 0.03220 * 
+---
+Signif. codes:  0 ‘***’ 0.001 ‘**’ 0.01 ‘*’ 0.05 ‘.’ 0.1 ‘ ’ 1
+
+R-sq.(adj) =  0.0412   Deviance explained = 39.1%
+-REML = 167.22  Scale est. = 1         n = 1642

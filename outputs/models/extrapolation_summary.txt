@@ -1,0 +1,20 @@
+
+
+Table: Extrapolation
+
+Type          Count         Percentage  
+------------  ------------  ------------
+Univariate    293           8.13        
+Analogue      3310          91.87       
+-----------   -----------   ----------- 
+Total         3603          100         
+
+
+Table: Most influential covariates (MIC)
+
+Type          Covariate     Count         Percentage  
+------------  ------------  ------------  ------------
+Univariate    depth         285           7.9         
+Univariate    dist_pass     8             0.22        
+-----------   -----------   -----------   ----------- 
+Total                       293           8.1         
