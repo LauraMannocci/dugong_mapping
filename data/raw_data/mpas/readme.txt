@@ -1,0 +1,1 @@
+UNEP-WCMC and IUCN (2021), Protected Planet: The World Database on Protected Areas (WDPA) and World Database on Other Effective Area-based Conservation Measures (WD-OECM) [Online], March 2021, Cambridge, UK: UNEP-WCMC and IUCN. Available at: www.protectedplanet.net.

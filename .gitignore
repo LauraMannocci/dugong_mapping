@@ -3,15 +3,13 @@
 .RData
 .Ruserdata
 
-data/raw_data
+data/raw_data/old
 
+data/raw_data/Bathy/MNT-nettoyé_v3_FINAL.tif
 
 data/processed_data
 
 outputs
 
-dugong_laura_from_raph
+old
 
-sessionsaved.RData
-untitled1.RData
-for_laure.RData

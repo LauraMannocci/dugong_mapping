@@ -29,6 +29,7 @@ maplatlon = osm_map(lat1, lon1, lat2, lon2)
 
 
 
+
 ######################################## DISTANCE TO MAINLAND (MILLENIUM) ########################################
 
 # Read New Caledonia coral shapefile (for distances computation)
@@ -52,279 +53,35 @@ raster::writeRaster(dist_land, here::here("data", "processed_data", "predictors"
 
 
 
-######################################## TRAVEL TIME ########################################
 
-# load travel time raster from FB (corresponding to travel times from Nouméa (seconds) in 1 x 1 km cell)
-# and resample
-travel_time = load_travel_time_raster(rast_xy) # **** reextract based on full survey coverage ??
 
-# mask based on dist to mainland raster
-travel_time = mask_with_land(travel_time, dist_land)
 
-# Map original travel time
-map_travel_time(travel_time)
+
+######################################## CORAL COVER (MILLENIUM) ########################################
+
+#make coral cover raster
+coral_cover = make_coral_cover_raster(coral_millenium, rast_xy) 
+
+# mask to remove land
+coral_cover = mask_with_land2(coral_cover, dist_land)
+
+# Map distance to mainland raster
+map_coral_cover(coral_cover)
 
 # write raster
-raster::writeRaster(travel_time, here::here("data", "processed_data", "predictors", "travel_time.grd"), overwrite=TRUE)
+raster::writeRaster(coral_cover, here::here("data", "processed_data", "predictors", "coral_cover.grd"), overwrite=TRUE)
 
 
 
 
-######################################## BENTHIC CORAL SUBSTRATE (ALLEN ATLAS) ########################################
 
-#read Allen coral benthic polygon
-coral = read_convert_coral_benthic(lon1, lon2, lat2, lat1)
-
-#Map Allen coral polygons on OSM
-map_allen_coral_osm(maplatlon, coral, lon1, lon2, lat1, lat2)
-
-#Reproject
-coral_projected = sp::spTransform(coral, sp::CRS("+init=epsg:3163"))
-
-#create coral_cover raster to be used in assign_zeros_where_absent_type function below
-coral_cover = raster::rasterize(coral_projected, rast_xy, getCover = T)
-
-
-#setup parallel processing
-
-library(foreach)
-library(raster)
-
-#1-create the cluster
-my.cluster <- parallel::makeCluster(
-    parallel::detectCores() - 1,
-    type = "PSOCK")
-
-#2-register it to be used by %dopar%
-doParallel::registerDoParallel(cl = my.cluster)
-
-#make coverage raster for each habitat type
-percent_rubble = make_raster_coral_benthic_type(coral_projected, rast_xy, "Rubble")
-percent_coral_algae = make_raster_coral_benthic_type(coral_projected, rast_xy, "Coral_algae")
-percent_microalgal_mats = make_raster_coral_benthic_type(coral_projected, rast_xy, "Microalgal_mats")
-percent_seagrass = make_raster_coral_benthic_type(coral_projected, rast_xy, "Seagrass")
-percent_sand = make_raster_coral_benthic_type(coral_projected, rast_xy, "Sand")
-percent_rock = make_raster_coral_benthic_type(coral_projected, rast_xy, "Rock")
-
-
-#extend all rasters to study area raster
-percent_rubble = extend_raster(percent_rubble, rast_xy)
-percent_coral_algae = extend_raster(percent_coral_algae, rast_xy)
-percent_microalgal_mats = extend_raster(percent_microalgal_mats, rast_xy)
-percent_seagrass = extend_raster(percent_seagrass, rast_xy)
-percent_sand = extend_raster(percent_sand, rast_xy)
-percent_rock = extend_raster(percent_rock, rast_xy)
-
-
-# mask based on dist to mainland raster
-percent_rubble = mask_with_land(percent_rubble, dist_land)
-percent_coral_algae = mask_with_land(percent_coral_algae, dist_land)
-percent_microalgal_mats = mask_with_land(percent_microalgal_mats, dist_land)
-percent_seagrass = mask_with_land(percent_seagrass, dist_land)
-percent_sand = mask_with_land(percent_sand, dist_land)
-percent_rock = mask_with_land(percent_rock, dist_land)
-
-
-# assign zeros where habitat/geomorpho type is absent using coral_cover raster as mask
-percent_rubble = assign_zeros_where_absent_type(percent_rubble, coral_cover) 
-percent_coral_algae = assign_zeros_where_absent_type(percent_coral_algae, coral_cover) 
-percent_microalgal_mats = assign_zeros_where_absent_type(percent_microalgal_mats, coral_cover) 
-percent_seagrass = assign_zeros_where_absent_type(percent_seagrass, coral_cover) 
-percent_sand = assign_zeros_where_absent_type(percent_sand, coral_cover) 
-percent_rock = assign_zeros_where_absent_type(percent_rock, coral_cover) 
-
-
-#map
-map_coral_habitat(percent_rubble, "percent_rubble")
-map_coral_habitat(percent_coral_algae, "percent_coral_algae")
-map_coral_habitat(percent_microalgal_mats, "percent_microalgal_mats")
-map_coral_habitat(percent_seagrass, "percent_seagrass")
-map_coral_habitat(percent_sand, "percent_sand")
-map_coral_habitat(percent_rock, "percent_rock")
-
-
-#write rasters
-raster::writeRaster(percent_rubble, here::here("data", "processed_data", "predictors", "percent_rubble.grd"), overwrite=TRUE)
-raster::writeRaster(percent_coral_algae, here::here("data", "processed_data", "predictors", "percent_coral_algae.grd"), overwrite=TRUE)
-raster::writeRaster(percent_microalgal_mats, here::here("data", "processed_data", "predictors", "percent_microalgal_mats.grd"), overwrite=TRUE)
-raster::writeRaster(percent_seagrass, here::here("data", "processed_data", "predictors", "percent_seagrass.grd"), overwrite=TRUE)
-raster::writeRaster(percent_sand, here::here("data", "processed_data", "predictors", "percent_sand.grd"), overwrite=TRUE)
-raster::writeRaster(percent_rock, here::here("data", "processed_data", "predictors", "percent_rock.grd"), overwrite=TRUE)
-
-
-
-
-
-######################################## GEOMORPHOLOGY (ALLEN ATLAS) ########################################
-
-
-#read Allen coral geomorpho polygon
-geom = read_convert_coral_geomorpho(lon1, lon2, lat2, lat1)
-
-#Map Allen geomorpho polygons on OSM
-map_allen_geomorpho_osm(maplatlon, geom, lon1, lon2, lat1, lat2)
-
-#Reproject
-geom_projected = sp::spTransform(geom, sp::CRS("+init=epsg:3163"))
-
-
-
-#setup parallel processing
-
-library(foreach)
-library(raster)
-
-#1-create the cluster
-my.cluster <- parallel::makeCluster(
-  parallel::detectCores() - 1,
-  type = "PSOCK")
-
-#2-register it to be used by %dopar%
-doParallel::registerDoParallel(cl = my.cluster)
-
-#make coverage raster for each geomorpho type
-percent_back_reef_slope = make_raster_coral_geomorpho_type(geom_projected, rast_xy, "Back_Reef_Slope")
-percent_deep_lagoon = make_raster_coral_geomorpho_type(geom_projected, rast_xy, "Deep_Lagoon")
-percent_inner_reef_flat = make_raster_coral_geomorpho_type(geom_projected, rast_xy, "Inner_Reef_Flat")
-percent_outer_reef_flat = make_raster_coral_geomorpho_type(geom_projected, rast_xy, "Outer_Reef_Flat")
-percent_plateau = make_raster_coral_geomorpho_type(geom_projected, rast_xy, "Plateau")
-percent_reef_crest = make_raster_coral_geomorpho_type(geom_projected, rast_xy, "Reef_Crest")
-percent_reef_slope = make_raster_coral_geomorpho_type(geom_projected, rast_xy, "Reef_Slope")
-percent_shallow_lagoon = make_raster_coral_geomorpho_type(geom_projected, rast_xy, "Shallow_Lagoon")
-percent_terrestrial_reef_flat = make_raster_coral_geomorpho_type(geom_projected, rast_xy, "Terrestrial_Reef_Flat")
-
-
-
-#extend all rasters to study area raster
-percent_back_reef_slope = extend_raster(percent_back_reef_slope, rast_xy)
-percent_deep_lagoon = extend_raster(percent_deep_lagoon, rast_xy)
-percent_inner_reef_flat = extend_raster(percent_inner_reef_flat, rast_xy)
-percent_outer_reef_flat = extend_raster(percent_outer_reef_flat, rast_xy)
-percent_plateau = extend_raster(percent_plateau, rast_xy)
-percent_reef_crest = extend_raster(percent_reef_crest, rast_xy)
-percent_reef_slope = extend_raster(percent_reef_slope, rast_xy)
-percent_shallow_lagoon = extend_raster(percent_shallow_lagoon, rast_xy)
-percent_terrestrial_reef_flat = extend_raster(percent_terrestrial_reef_flat, rast_xy)
-
-
-
-# mask based on dist to mainland raster
-percent_back_reef_slope = mask_with_land(percent_back_reef_slope, dist_land)
-percent_deep_lagoon = mask_with_land(percent_deep_lagoon, dist_land)
-percent_inner_reef_flat = mask_with_land(percent_inner_reef_flat, dist_land)
-percent_outer_reef_flat = mask_with_land(percent_outer_reef_flat, dist_land)
-percent_plateau = mask_with_land(percent_plateau, dist_land)
-percent_reef_crest = mask_with_land(percent_reef_crest, dist_land)
-percent_reef_slope = mask_with_land(percent_reef_slope, dist_land)
-percent_shallow_lagoon = mask_with_land(percent_shallow_lagoon, dist_land)
-percent_terrestrial_reef_flat = mask_with_land(percent_terrestrial_reef_flat, dist_land)
-
-
-# assign zeros where habitat/geomorpho type is absent based on coral_cover raster
-percent_back_reef_slope = assign_zeros_where_absent_type(percent_back_reef_slope, coral_cover) 
-percent_deep_lagoon = assign_zeros_where_absent_type(percent_deep_lagoon, coral_cover) 
-percent_inner_reef_flat = assign_zeros_where_absent_type(percent_inner_reef_flat, coral_cover) 
-percent_outer_reef_flat = assign_zeros_where_absent_type(percent_outer_reef_flat, coral_cover) 
-percent_plateau = assign_zeros_where_absent_type(percent_plateau, coral_cover) 
-percent_reef_crest = assign_zeros_where_absent_type(percent_reef_crest, coral_cover) 
-percent_reef_slope = assign_zeros_where_absent_type(percent_reef_slope, coral_cover) 
-percent_shallow_lagoon = assign_zeros_where_absent_type(percent_shallow_lagoon, coral_cover) 
-percent_terrestrial_reef_flat = assign_zeros_where_absent_type(percent_terrestrial_reef_flat, coral_cover) 
-
-  
-
-#map                
-map_coral_habitat(percent_back_reef_slope, "percent_back_reef_slope")
-map_coral_habitat(percent_deep_lagoon, "percent_deep_lagoon")
-map_coral_habitat(percent_inner_reef_flat, "percent_inner_reef_flat")
-map_coral_habitat(percent_outer_reef_flat, "percent_outer_reef_flat")
-map_coral_habitat(percent_plateau, "percent_plateau")
-map_coral_habitat(percent_reef_crest, "percent_reef_crest")
-map_coral_habitat(percent_reef_slope, "percent_reef_slope")
-map_coral_habitat(percent_shallow_lagoon, "percent_shallow_lagoon")
-map_coral_habitat(percent_terrestrial_reef_flat, "percent_back_reef_slope")
-
-
-#write rasters     
-raster::writeRaster(percent_back_reef_slope, here::here("data", "processed_data", "predictors", "percent_back_reef_slope.grd"), overwrite=TRUE)
-raster::writeRaster(percent_deep_lagoon, here::here("data", "processed_data", "predictors", "percent_deep_lagoon.grd"), overwrite=TRUE)
-raster::writeRaster(percent_inner_reef_flat, here::here("data", "processed_data", "predictors", "percent_inner_reef_flat.grd"), overwrite=TRUE)
-raster::writeRaster(percent_outer_reef_flat, here::here("data", "processed_data", "predictors", "percent_outer_reef_flat.grd"), overwrite=TRUE)
-raster::writeRaster(percent_plateau, here::here("data", "processed_data", "predictors", "percent_plateau.grd"), overwrite=TRUE)
-raster::writeRaster(percent_reef_crest, here::here("data", "processed_data", "predictors", "percent_reef_crest.grd"), overwrite=TRUE)
-raster::writeRaster(percent_reef_slope, here::here("data", "processed_data", "predictors", "percent_reef_slope.grd"), overwrite=TRUE)
-raster::writeRaster(percent_shallow_lagoon, here::here("data", "processed_data", "predictors", "percent_shallow_lagoon.grd"), overwrite=TRUE)
-raster::writeRaster(percent_terrestrial_reef_flat, here::here("data", "processed_data", "predictors", "percent_terrestrial_reef_flat.grd"), overwrite=TRUE)
-
-
-
-
-
-######################################## TURBIDITY (ALLEN ATLAS) ########################################
-
-# read quaterly turbidity and produce average raster
-turb = read_average_resample_turbidity(lon1, lon2, lat2, lat1, rast_xy)
-
-# mask based on dist to mainland raster
-turb = mask_with_land(turb, dist_land)
-
-#map turbidity
-map_turbidity(turb)
-
-# write raster
-raster::writeRaster(turb, here::here("data", "processed_data", "predictors", "turbidity.grd"), overwrite=TRUE)
-
-
-
-
-
-######################################## POPULATION ########################################
-
-# Make population raster
-population = make_population_raster(rast_xy) 
-
-# mask based on dist to mainland raster
-population = mask_with_land(population, dist_land)
-
-# Map population raster
-map_population(population)
-
-# write raster
-raster::writeRaster(population, here::here("data", "processed_data", "predictors", "population.grd"), overwrite=TRUE)
-
-
-
-
-
-
-
-
-######################################## POPULATION DENSITY ########################################
-
-# Prepare population density raster (worldwide data, 2020 year and 5 x 5 km buffer)
-pop_density = make_pop_density(rast_xy, lon1, lon2, lat1, lat2) 
-
-# mask based on dist to mainland raster
-pop_density = mask_with_land(pop_density, dist_land)
-
-# Map population desnity raster
-map_pop_density(pop_density)
-
-# write raster
-raster::writeRaster(pop_density, here::here("data", "processed_data", "predictors", "pop_density.grd"), overwrite=TRUE)
-
-
-
-
-
-
-######################################## DEPTH ########################################
+######################################## MEDIAN DEPTH ########################################
 
 # read depth from Jean roger (IRD) and resample to study area
-depth = read_resample_depth(rast_latlon, rast_xy)
+depth_med = read_median_depth(rast_latlon, rast_xy)
 
 # mask based on dist to mainland raster
-depth = mask_with_land(depth, dist_land)
+depth = mask_with_land2(depth_med, dist_land)
 
 # Map depth raster
 map_depth(depth)
@@ -341,6 +98,25 @@ raster::plot(depth_mask)
 depth_mask <- raster::mask(depth, block)
 depth_mask[depth_mask < -30] <- NA
 raster::plot(depth_mask)
+
+
+
+######################################## MEDIAN SLOPE ########################################
+
+
+# Calculate median slope from median depth
+slope = calculate_median_slope(depth_med)
+
+# mask based on dist to mainland raster
+slope = mask_with_land2(slope, dist_land)
+
+# Map slope raster
+map_slope(slope)
+
+# write raster
+raster::writeRaster(slope, here::here("data", "processed_data", "predictors", "slope.grd"), overwrite=TRUE)
+
+
 
 ######################################## MPA ########################################
 
@@ -412,25 +188,6 @@ raster::writeRaster(mpa_pres, here::here("data", "processed_data", "predictors",
 
 
 
-######################################## DISTANCE TO REEF ########################################
-
-
-# Make distance to reef raster (first aggregate to avoid overly long computation time)
-rast_xy_lr = raster::aggregate(rast_xy, fact = 2)
-dist_reef = make_dist_to_reef_raster(coral_millenium, rast_xy_lr)
-dist_reef = raster::resample(dist_reef, rast_xy)
-
-# mask based on dist to mainland raster
-dist_reef = mask_with_land(dist_reef, dist_land)
-
-# Map distance to reef raster
-map_dist_to_reef(dist_reef)
-
-# write raster
-raster::writeRaster(dist_reef, here::here("data", "processed_data", "predictors", "dist_reef.grd"), overwrite=TRUE)
-
-
-
 
 
 ######################################## DISTANCE TO REEF PASSES (Breckwood et al 2022)########################################
@@ -488,6 +245,31 @@ raster::writeRaster(dist_intermediate_reef, here::here("data", "processed_data",
 
 
 
+
+
+
+
+
+######################################## DISTANCE TO ALL REEF (MILLENIUM)########################################
+
+
+# Make distance to mainland raster
+dist_all_reef = make_dist_to_all_reef_raster(coral_millenium, rast_xy)
+
+# mask based on dist to mainland raster
+dist_all_reef = mask_with_land(dist_all_reef, dist_land)
+
+# Map distance to mainland raster
+map_dist_to_all_reef(dist_all_reef)
+
+# write raster
+raster::writeRaster(dist_all_reef, here::here("data", "processed_data", "predictors", "dist_all_reef.grd"), overwrite=TRUE)
+
+
+
+
+
+
 ##################################### PERCENT COVERAGE DEEP LAGOON (MILLENIUM)##################################### 
 
 
@@ -516,7 +298,7 @@ percent_deep_lagoon_millenium = mask_with_land(percent_deep_lagoon_millenium, di
 
 
 # assign zeros where habitat/geomorpho type is absent based on coral_cover raster
-percent_deep_lagoon_millenium = assign_zeros_where_absent_type(percent_deep_lagoon_millenium, coral_cover) 
+percent_deep_lagoon_millenium = assign_zeros_where_absent_type(percent_deep_lagoon_millenium, coral_cover_for_assignment) 
 
 
 #map                
@@ -524,8 +306,8 @@ map_coral_habitat(percent_deep_lagoon_millenium, "percent_deep_lagoon_millenium"
 
 
 #write rasters 
-names(percent_deep_lagoon_millenium) <- "deep_lagoon_millenium"
-raster::writeRaster(percent_deep_lagoon_millenium, here::here("data", "processed_data", "predictors", "percent_deep_lagoon_millenium.grd"), overwrite=TRUE)
+names(percent_deep_lagoon_millenium) <- "deep_lagoon"
+raster::writeRaster(percent_deep_lagoon_millenium, here::here("data", "processed_data", "predictors", "percent_deep_lagoon.grd"), overwrite=TRUE)
 
 
 
@@ -558,7 +340,7 @@ percent_shallow_terrace_millenium = mask_with_land(percent_shallow_terrace_mille
 
 
 # assign zeros where habitat/geomorpho type is absent based on coral_cover raster
-percent_shallow_terrace_millenium = assign_zeros_where_absent_type(percent_shallow_terrace_millenium, coral_cover) 
+percent_shallow_terrace_millenium = assign_zeros_where_absent_type(percent_shallow_terrace_millenium, coral_cover_for_assignment) 
 
 
 #map                
@@ -566,8 +348,238 @@ map_coral_habitat(percent_shallow_terrace_millenium, "percent_shallow_terrace_mi
 
 
 #write rasters 
-names(percent_shallow_terrace_millenium) <- "shallow_terrace_millenium"
-raster::writeRaster(percent_shallow_terrace_millenium, here::here("data", "processed_data", "predictors", "percent_shallow_terrace_millenium.grd"), overwrite=TRUE)
+names(percent_shallow_terrace_millenium) <- "shallow_terrace"
+raster::writeRaster(percent_shallow_terrace_millenium, here::here("data", "processed_data", "predictors", "percent_shallow_terrace.grd"), overwrite=TRUE)
+
+
+
+
+
+
+##################################### PERCENT COVERAGE FOREREEF (MILLENIUM)##################################### 
+
+
+
+#setup parallel processing
+
+library(foreach)
+library(raster)
+
+#1-create the cluster
+my.cluster <- parallel::makeCluster(
+  parallel::detectCores() - 1,
+  type = "PSOCK")
+
+#2-register it to be used by %dopar%
+doParallel::registerDoParallel(cl = my.cluster)
+
+#make coverage raster for each habitat type
+percent_forereef_millenium = make_raster_coral_millenium_type(coral_millenium, rast_xy, "forereef_millenium")
+
+#extend all rasters to study area raster
+percent_forereef_millenium = extend_raster(percent_forereef_millenium, rast_xy)
+
+# mask based on dist to mainland raster
+percent_forereef_millenium = mask_with_land(percent_forereef_millenium, dist_land)
+
+
+# assign zeros where habitat/geomorpho type is absent based on coral_cover raster
+percent_forereef_millenium = assign_zeros_where_absent_type(percent_forereef_millenium, coral_cover_for_assignment) 
+
+
+#map                
+map_coral_habitat(percent_forereef_millenium, "percent_forereef_millenium")
+
+
+#write rasters 
+names(percent_forereef_millenium) <- "forereef"
+raster::writeRaster(percent_forereef_millenium, here::here("data", "processed_data", "predictors", "percent_forereef.grd"), overwrite=TRUE)
+
+
+
+
+
+
+
+
+
+##################################### PERCENT COVERAGE reefflat (MILLENIUM)##################################### 
+
+
+
+#setup parallel processing
+
+library(foreach)
+library(raster)
+
+#1-create the cluster
+my.cluster <- parallel::makeCluster(
+  parallel::detectCores() - 1,
+  type = "PSOCK")
+
+#2-register it to be used by %dopar%
+doParallel::registerDoParallel(cl = my.cluster)
+
+#make coverage raster for each habitat type
+percent_reefflat_millenium = make_raster_coral_millenium_type(coral_millenium, rast_xy, "reefflat_millenium")
+
+#extend all rasters to study area raster
+percent_reefflat_millenium = extend_raster(percent_reefflat_millenium, rast_xy)
+
+# mask based on dist to mainland raster
+percent_reefflat_millenium = mask_with_land(percent_reefflat_millenium, dist_land)
+
+
+# assign zeros where habitat/geomorpho type is absent based on coral_cover raster
+percent_reefflat_millenium = assign_zeros_where_absent_type(percent_reefflat_millenium, coral_cover_for_assignment) 
+
+
+#map                
+map_coral_habitat(percent_reefflat_millenium, "percent_reefflat_millenium")
+
+
+#write rasters 
+names(percent_reefflat_millenium) <- "reefflat"
+raster::writeRaster(percent_reefflat_millenium, here::here("data", "processed_data", "predictors", "percent_reefflat.grd"), overwrite=TRUE)
+
+
+
+
+
+
+
+
+
+##################################### PERCENT COVERAGE intermreefflat (MILLENIUM)##################################### 
+
+
+
+#setup parallel processing
+
+library(foreach)
+library(raster)
+
+#1-create the cluster
+my.cluster <- parallel::makeCluster(
+  parallel::detectCores() - 1,
+  type = "PSOCK")
+
+#2-register it to be used by %dopar%
+doParallel::registerDoParallel(cl = my.cluster)
+
+#make coverage raster for each habitat type
+percent_intermreefflat_millenium = make_raster_coral_millenium_type(coral_millenium, rast_xy, "intermreefflat_millenium")
+
+#extend all rasters to study area raster
+percent_intermreefflat_millenium = extend_raster(percent_intermreefflat_millenium, rast_xy)
+
+# mask based on dist to mainland raster
+percent_intermreefflat_millenium = mask_with_land(percent_intermreefflat_millenium, dist_land)
+
+
+# assign zeros where habitat/geomorpho type is absent based on coral_cover raster
+percent_intermreefflat_millenium = assign_zeros_where_absent_type(percent_intermreefflat_millenium, coral_cover_for_assignment) 
+
+
+#map                
+map_coral_habitat(percent_intermreefflat_millenium, "percent_intermreefflat_millenium")
+
+
+#write rasters 
+names(percent_intermreefflat_millenium) <- "intermreefflat"
+raster::writeRaster(percent_intermreefflat_millenium, here::here("data", "processed_data", "predictors", "percent_intermreefflat.grd"), overwrite=TRUE)
+
+
+
+
+
+
+
+
+##################################### PERCENT COVERAGE diffusefringing (MILLENIUM)##################################### 
+
+
+
+#setup parallel processing
+
+library(foreach)
+library(raster)
+
+#1-create the cluster
+my.cluster <- parallel::makeCluster(
+  parallel::detectCores() - 1,
+  type = "PSOCK")
+
+#2-register it to be used by %dopar%
+doParallel::registerDoParallel(cl = my.cluster)
+
+#make coverage raster for each habitat type
+percent_diffusefringing_millenium = make_raster_coral_millenium_type(coral_millenium, rast_xy, "diffusefringing_millenium")
+
+#extend all rasters to study area raster
+percent_diffusefringing_millenium = extend_raster(percent_diffusefringing_millenium, rast_xy)
+
+# mask based on dist to mainland raster
+percent_diffusefringing_millenium = mask_with_land(percent_diffusefringing_millenium, dist_land)
+
+
+# assign zeros where habitat/geomorpho type is absent based on coral_cover raster
+percent_diffusefringing_millenium = assign_zeros_where_absent_type(percent_diffusefringing_millenium, coral_cover_for_assignment) 
+
+
+#map                
+map_coral_habitat(percent_diffusefringing_millenium, "percent_diffusefringing_millenium")
+
+
+#write rasters 
+names(percent_diffusefringing_millenium) <- "diffusefringing"
+raster::writeRaster(percent_diffusefringing_millenium, here::here("data", "processed_data", "predictors", "percent_diffusefringing.grd"), overwrite=TRUE)
+
+
+
+
+
+
+
+##################################### PERCENT COVERAGE channel (MILLENIUM)##################################### 
+
+
+
+#setup parallel processing
+
+library(foreach)
+library(raster)
+
+#1-create the cluster
+my.cluster <- parallel::makeCluster(
+  parallel::detectCores() - 1,
+  type = "PSOCK")
+
+#2-register it to be used by %dopar%
+doParallel::registerDoParallel(cl = my.cluster)
+
+#make coverage raster for each habitat type
+percent_channel_millenium = make_raster_coral_millenium_type(coral_millenium, rast_xy, "channel_millenium")
+
+#extend all rasters to study area raster
+percent_channel_millenium = extend_raster(percent_channel_millenium, rast_xy)
+
+# mask based on dist to mainland raster
+percent_channel_millenium = mask_with_land(percent_channel_millenium, dist_land)
+
+
+# assign zeros where habitat/geomorpho type is absent based on coral_cover raster
+percent_channel_millenium = assign_zeros_where_absent_type(percent_channel_millenium, coral_cover_for_assignment) 
+
+
+#map                
+map_coral_habitat(percent_channel_millenium, "percent_channel_millenium")
+
+
+#write rasters 
+names(percent_channel_millenium) <- "channel"
+raster::writeRaster(percent_channel_millenium, here::here("data", "processed_data", "predictors", "percent_channel.grd"), overwrite=TRUE)
+
 
 
 
@@ -590,7 +602,7 @@ percent_seagrass = extend_raster(percent_seagrass, rast_xy)
 percent_seagrass = mask_with_land(percent_seagrass, dist_land)
 
 # assign zeros where habitat/geomorpho type is absent based on coral_cover raster
-percent_seagrass = assign_zeros_where_absent_type(percent_seagrass, coral_cover) 
+percent_seagrass = assign_zeros_where_absent_type(percent_seagrass, coral_cover_for_assignment) 
 
 
 #map                

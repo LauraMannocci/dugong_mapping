@@ -1,0 +1,1 @@
+surveyed bloc created with qgis

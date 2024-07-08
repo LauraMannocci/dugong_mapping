@@ -167,16 +167,16 @@ table(telemetry_obs_on_dupl_rm$stage) # 100 adults 19 juveniles
 
 
 #correct number of observations for availability bias following Hagihara et al 2016
-#proba of availability for New Caledonia (hour 8:00-16:00, depth <5 and 5-20 averaged)
+#proba of availability for New Caledonia (hour 8:00-16:00, all depth averaged)
 #1 for eci1
-#0.58 for eci2 -> divide by 0.58
-#0.825 for eci 3 -> divide by 0.825
-#0.39 for eci4 -> divide by 0.39
+#0.63 for eci2 -> divide by 0.63 (previsouly 0.58)
+#0.83 for eci 3 -> divide by 0.83 (previsouly 0.825)
+#0.47 for eci4 -> divide by 0.47 (previsouly 0.39)
 telemetry_obs_on_dupl_rm_avail_cor = telemetry_obs_on_dupl_rm %>% 
   dplyr::mutate(n_count_avail_corrected = dplyr::case_when(eci == 1 ~ 1,
-                                                           eci == 2 ~ 1 / 0.58,
-                                                           eci == 3 ~ 1 / 0.825,
-                                                           eci == 4 ~ 1 / 0.39))  
+                                                           eci == 2 ~ 1 / 0.63,
+                                                           eci == 3 ~ 1 / 0.83,
+                                                           eci == 4 ~ 1 / 0.47))  
 telemetry_obs_on = telemetry_obs_on_dupl_rm_avail_cor
 sum(telemetry_obs_on$n_count_avail_corrected) #corrected abundance
 nrow(telemetry_obs_on) #uncorrected abundance
@@ -329,24 +329,12 @@ map_obs_per_grid_species_with_zero(maplatlon_proj, grid_obs_per_date, grid_track
 
 #Map species densities per grid cell (per date)
 map_dens_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Dugong_certain_probable", 0.2)
-# map_dens_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Turtle", 0.2)
-# map_dens_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Shark", 0.2)
-# map_dens_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Round_ray", 0.2)
-# map_dens_per_grid_per_date_species(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Eagle_ray", 0.2)
 
 #Map species densities per grid cell (all dates) LOG scale with zero
 map_dens_per_grid_species_log_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Dugong_certain_probable", 0.5)
-# map_dens_per_grid_species_log_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Turtle", 0.5)
-# map_dens_per_grid_species_log_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Shark", 0.5)
-# map_dens_per_grid_species_log_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Round_ray", 0.5)
-# map_dens_per_grid_species_log_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Eagle_ray", 0.5)
 
 #Map species densities per grid cell (all dates) with zero
 map_dens_per_grid_species_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Dugong_certain_probable", 0.5)
-# map_dens_per_grid_species_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Turtle", 0.5)
-# map_dens_per_grid_species_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Shark", 0.5)
-# map_dens_per_grid_species_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Round_ray", 0.5)
-# map_dens_per_grid_species_with_zero(maplatlon_proj, grid_obs_per_date, grid_tracks_per_date, footprint_width, "Eagle_ray", 0.5)
 
 
 
@@ -396,5 +384,3 @@ raster::writeRaster(r_abundance_dugong[[1]], here::here("data", "processed_data"
 raster::writeRaster(r_abundance_dugong[[2]], here::here("data", "processed_data", "abundance", "area_surveyed.grd"), overwrite=TRUE)
 
 
-
-############################################ MAKE ABUNDANCE AND SURVEYED AREA MAPS #############################################################

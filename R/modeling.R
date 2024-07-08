@@ -324,7 +324,7 @@ map_abundance_predictions_region <- function(maplatlonproj, pred, pred_se){
   
   ####cv
   
-  pred_cv = 100* (pred_se / pred)
+  pred_cv = (pred_se / pred)
   
   #conversting to data frame
   pred_cv = pred_cv %>% 
@@ -410,7 +410,7 @@ map_abundance_predictions_surveyed <- function(maplatlonproj, pred, pred_se){
   
   ####cv
   
-  pred_cv = 100* (pred_se / pred)
+  pred_cv = (pred_se / pred)
   
   #conversting to data frame
   pred_cv = pred_cv %>% 
@@ -489,7 +489,7 @@ map_abundance_predictions_region_interp <- function(maplatlonproj, pred, pred_se
   
   ####cv
   
-  pred_cv = 100* (pred_se / pred)
+  pred_cv = (pred_se / pred)
   
   #conversting to data frame
   pred_cv = pred_cv %>% 
@@ -504,7 +504,7 @@ map_abundance_predictions_region_interp <- function(maplatlonproj, pred, pred_se
                    panel.background = ggplot2::element_blank(),
                    plot.title = ggplot2::element_text(hjust = 0.5)) +
     ggplot2::scale_fill_gradient(low = "dark grey", high = "red", na.value = NA,
-                                 name = "%")
+                                 name = "CV %")
   
   ggplot2::ggsave(here::here("outputs/models/map_abundance_cv_region_interp.png"), map, width = 7, height = 5)
   
@@ -584,7 +584,7 @@ map_abundance_predictions_region_interp_mpas <- function(maplatlonproj, pred, pr
   
   ####cv
   
-  pred_cv = 100* (pred_se / pred)
+  pred_cv = (pred_se / pred)
   
   #conversting to data frame
   pred_cv = pred_cv %>% 
@@ -703,7 +703,7 @@ map_abundance_predictions_region_interp_surv <- function(maplatlonproj, pred, pr
   
   ####cv
   
-  pred_cv = 100* (pred_se / pred)
+  pred_cv = (pred_se / pred)
   
   #conversting to data frame
   pred_cv = pred_cv %>% 
